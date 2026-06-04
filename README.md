@@ -1,18 +1,94 @@
 # Claude Project Framework
 
 A token-efficient multi-agent Claude Code setup for development teams.
-Drop-in global configuration, auto-routing agents, project templates, and a two-layer
-documentation system that keeps Claude context lean across every project type.
+15 auto-routing agents, a two-layer documentation system, project templates, and
+smart install scripts — all designed around one principle: **never pay for tokens you don't need.**
+
+**Works with:** UiPath bots · C# libraries and APIs · Node.js/React apps · Python services
 
 ---
 
-## What This Is
+## Why This Exists — The Token Problem
 
-Instead of loading an entire repository into Claude's context window every session,
-this framework routes tasks through specialized agents, compresses context before sending,
-and caches shared documentation — so Claude stays fast and cheap at scale.
+When you open Claude Code on a project, Claude reads your `CLAUDE.md` file on **every single message** of the session. If that file is 17KB (not unusual for a project that's been running a while), you're spending ~4,250 tokens just on context overhead — before you've even asked anything.
 
-**Works with:** UiPath bots, C# libraries and APIs, Node.js/React apps, Python services.
+Multiply that across a full session:
+
+| Scenario | Tokens per message | 100-message session |
+|---|---|---|
+| Bloated 17KB CLAUDE.md | ~4,250 input tokens | 425,000 tokens of overhead |
+| Trimmed 3.5KB CLAUDE.md | ~875 input tokens | 87,500 tokens of overhead |
+| **Savings** | **79%** | **337,500 tokens saved** |
+
+That's before counting model choice. Running a log analysis or doc lookup through Sonnet costs roughly **12× more** than running it through Haiku — for the exact same result.
+
+This framework tackles both problems:
+
+1. **Keep CLAUDE.md lean** — rules only, under 4KB. Detail lives in separate files loaded on demand.
+2. **Route tasks to the cheapest model that can do the job** — 15 specialized agents, 14 on Haiku.
+3. **Share org-wide standards globally** — never copy the same boilerplate into every project.
+
+---
+
+## Core Concepts
+
+### 1. The Context Window Is Not Free
+
+Every token sent to Claude costs money. Every token in your `CLAUDE.md`, every line of a file you paste, every message in a long session — all of it counts. Claude Code loads `CLAUDE.md` automatically, so its size directly multiplies your cost.
+
+**What belongs in CLAUDE.md:**
+- Rules, conventions, hard constraints
+- Key file names and what they do
+- What NOT to do (the non-obvious stuff)
+- Pointers to other docs
+
+**What does NOT belong in CLAUDE.md:**
+- Full API signatures (put in DESIGN.md, load on demand)
+- Endpoint lists (put in DESIGN.md)
+- Deployment runbooks (put in DEPLOYMENT.md)
+- Org-wide standards repeated in every project (put in global docs, inherit)
+
+### 2. Agents — Delegate, Don't Load
+
+When you ask Claude to review a git diff, it doesn't need to know your full project architecture. When you ask it to look up a queue ID, it doesn't need your test suite. Agents solve this by handling specific task types in isolation — they read only what they need and return a focused result.
+
+**Without agents:**
+```
+You → "Review my diff" → Claude loads FULL project context → reviews diff
+                         (paying for all that context you didn't need)
+```
+
+**With agents:**
+```
+You → "Review my diff" → Claude routes to pr-reviewer agent
+                       → agent reads ONLY the git diff
+                       → returns structured review
+                       → main context never touched
+```
+
+Agents also run on **Haiku by default** — the cheapest Claude model. For tasks like log analysis, doc lookup, standards checking, and code review, Haiku performs identically to Sonnet at a fraction of the cost.
+
+### 3. Delta MDs — Inherit, Don't Repeat
+
+Every project in your org deploys to the same AWS setup, talks to the same Orchestrator tenant, follows the same Git workflow. Repeating that in every project's docs means paying to load it in every session.
+
+The Delta MD system solves this with two layers:
+
+```
+Layer 1 — Global Standards (this repo, docs/)
+  ORCHESTRATOR_STANDARD.md   ← your org's Orchestrator: URLs, auth, folder hierarchy, OData patterns
+  DEPLOYMENT_STANDARD.md     ← your org's pipeline: ECS Fargate, GitHub Actions, AWS naming
+
+Layer 2 — Project Delta MDs (per-project repo)
+  ORCHESTRATOR.md   → "Extends: ORCHESTRATOR_STANDARD.md" + THIS project's queue IDs only
+  DEPLOYMENT.md     → "Extends: DEPLOYMENT_STANDARD.md" + THIS project's APP_NAME + ARNs only
+  CLAUDE.md         → rules only, under 4KB
+  DESIGN.md         → architecture, API surface, models — loaded only when working on design
+```
+
+The `doc-lookup` agent handles the merge automatically — it loads the global standard first, then the project delta, and project values win on any overlap.
+
+**Result:** A project `ORCHESTRATOR.md` goes from 5KB of repeated boilerplate to 1KB of project-specific values. A `DEPLOYMENT.md` goes from 12KB to 1.5KB.
 
 ---
 
@@ -23,83 +99,82 @@ and caches shared documentation — so Claude stays fast and cheap at scale.
 git clone https://github.com/kakoritz/claude-project-framework.git ~/claude-project-framework
 cd ~/claude-project-framework
 
-# Install global config (Linux/Mac)
+# Linux / Mac
 chmod +x install.sh && ./install.sh
 
-# Install global config (Windows — run in PowerShell, no admin needed)
+# Windows (PowerShell — no admin needed)
 .\install.ps1
 ```
 
-That's it. Open any project in Claude Code — the agents are live.
+Open any project in Claude Code. The 15 agents are live immediately.
 
 ---
 
-## How It Works
+## The 15 Agents
 
-### Two-Layer Documentation
+Agents auto-route — Claude recognizes the intent from your message and delegates.
+No slash commands. No extra configuration. Just ask naturally.
 
-Every project uses **Delta MDs** — files that extend org-wide standards rather than repeat them.
-
-```
-Layer 1 — Global standards (this repo, docs/)
-  ORCHESTRATOR_STANDARD.md   ← Orchestrator connection, OData patterns, folder hierarchy
-  DEPLOYMENT_STANDARD.md     ← ECS Fargate pipeline, GitHub Actions, AWS resource naming
-
-Layer 2 — Project Delta MDs (per-project, extends Layer 1)
-  ORCHESTRATOR.md            ← this project's queue IDs, folder paths, process keys only
-  DEPLOYMENT.md              ← this project's APP_NAME, ARNs, env vars only
-  CLAUDE.md                  ← rules only, under 4KB
-  DESIGN.md                  ← architecture, API surface, models (no duplication)
-```
-
-**Rule:** if it's the same across all projects, it lives in the global standard.
-If it's unique to one project, it lives in the Delta MD.
-
-The `doc-lookup` agent loads both layers automatically — project values override global values.
-
----
-
-## Agents
-
-Nine specialized agents auto-route based on what you ask. No slash commands needed —
-Claude recognizes the intent and delegates.
-
-| Agent | Model | Triggers on |
+| Agent | Model | Auto-triggers when you say... |
 |---|---|---|
-| `log-analyzer` | Haiku | Error logs, stack traces, crash output |
-| `doc-lookup` | Haiku | "What does DESIGN.md say about X", "where is Y documented" |
-| `pr-reviewer` | Haiku | "Review this diff", "check before I commit" |
-| `uipath-helper` | Haiku | Folder paths, queue IDs, process keys, OData patterns |
-| `standards-checker` | Haiku | "Check this against standards", "any violations" |
-| `security-check` | Haiku | "Security review", "any injection risks", "check for exposed secrets" |
-| `release-notes` | Haiku | "Update release notes", "generate changelog", "what changed in this version" |
-| `test-advisor` | Sonnet | "Write tests", "what's not covered", "generate tests for this function" |
-| `uipath-reviewer` | Haiku | "Prep for code review", "run pre-review checklist on this UiPath project" |
+| `log-analyzer` | Haiku | Share error logs, stack traces, crash output |
+| `doc-lookup` | Haiku | "What does DESIGN.md say about X" · "where is Y documented" |
+| `pr-reviewer` | Haiku | "Review this diff" · "check before I commit" · "any issues here" |
+| `uipath-helper` | Haiku | "What's the queue ID for..." · "which folder is TIR in" · OData patterns |
+| `standards-checker` | Haiku | "Does this meet standards" · "any naming violations" · "check before PR" |
+| `security-check` | Haiku | "Security review" · "any injection risks" · "check for exposed secrets" |
+| `release-notes` | Haiku | "Update release notes" · "generate changelog" · "what changed in v2.1" |
+| `test-advisor` | **Sonnet** | "Write tests for this" · "what's not covered" · "audit test coverage" |
+| `uipath-reviewer` | Haiku | "Prep for code review" · "run pre-review checklist" |
+| `dependency-audit` | Haiku | "Are my packages up to date" · "any vulnerable dependencies" |
+| `env-checker` | Haiku | "Ready to deploy" · "check my env vars" · "anything missing from .env" |
+| `db-advisor` | Haiku | Share SQL · "review this stored proc" · "index suggestions" |
+| `jira-helper` | Haiku | "Write this as a Jira ticket" · "format my commit message" · "acceptance criteria" |
+| `docker-advisor` | Haiku | Share Dockerfile · "why is my image large" · "ECS container patterns" |
+| `azure-helper` | Haiku | "MSAL not working" · "app registration setup" · AADSTS error codes |
 
-**Model selection rule:** use the cheapest model that can do the job.
-Haiku handles 90% of tasks. Sonnet for code generation. Opus only for deep architecture — explicit request required.
+**`test-advisor` runs on Sonnet** because writing good tests requires real code reasoning.
+Everything else runs on Haiku — fast, cheap, and more than capable for lookup and review tasks.
 
-### Adding Project-Specific Agents
+### How Auto-Routing Works
 
-Place agent `.md` files in `.claude/agents/` at the project root.
-They extend the global agents — they don't replace them.
+Each agent has a `description` field that Claude reads when deciding what to delegate.
+Claude matches your message intent against those descriptions and routes accordingly.
+You never need to know which agent handles what — just ask naturally.
+
+```
+You: "Are any of my npm packages out of date?"
+Claude: [routes to dependency-audit → runs npm outdated → returns structured table]
+
+You: "Review my diff before I push"
+Claude: [routes to pr-reviewer → reads git diff only → returns findings]
+
+You: "What does ORCHESTRATOR.md say about the TIR queue IDs?"
+Claude: [routes to doc-lookup → loads global standard + project delta → returns exact values]
+```
+
+### Project-Specific Agents
+
+For anything large or project-specific, add agents to `.claude/agents/` at the project root.
+They extend the global 15 — they don't replace them.
 
 ```
 your-project/
   .claude/
     agents/
-      swagger-lookup.md    ← keeps a 5MB NSwag file out of main context
-      new-agent.md         ← scaffolds new agents following this standard
+      swagger-lookup.md   ← keeps a 5MB NSwag file out of main context window
+      new-agent.md        ← scaffolds new agents following team standards
 ```
+
+Good candidates for project agents: large reference files (Swagger specs, log archives),
+project-specific workflows that run repeatedly, vendor API lookups.
 
 ---
 
-## Project Templates
-
-Scaffold a new project with the right Claude MD files pre-populated:
+## Setting Up a New Project
 
 ```bash
-# Linux/Mac
+# Linux / Mac
 ./new-project.sh
 
 # Windows
@@ -119,58 +194,97 @@ Project type:
   [5] Python           (script, agent, or service)
 
 Type (1-5): 1
-→ Creates MyNewBot.Performer/ with CLAUDE.md, STANDARDS.md, ORCHESTRATOR.md
-→ All placeholders filled with project name and date
+
+Created: D:\repos\MyNewBot.Performer\
+  OK CLAUDE.md
+  OK STANDARDS.md
+  OK ORCHESTRATOR.md
+
+Next: fill in the [placeholder] values in each MD file.
+      ORCHESTRATOR.md needs your queue IDs and folder paths.
 ```
 
-After running: fill in the `[placeholder]` values in each MD.
+All `{{PROJECT_NAME}}` and `{{DATE}}` placeholders are replaced automatically.
+What's left to fill in: your project description, queue IDs, folder paths, and any project-specific constraints.
 
 ---
 
 ## UiPath Coding Standards
 
-`STANDARDS_UIPATH.md` is a ready-to-use standards file for any UiPath project.
-Copy it to your project root as `STANDARDS.md` — the `standards-checker` and `uipath-reviewer`
-agents read it automatically.
+`STANDARDS_UIPATH.md` is a complete standards file for any UiPath project. Copy it to your project root as `STANDARDS.md` — the `standards-checker` and `uipath-reviewer` agents read it automatically.
 
-Covers: argument prefixes (`in_`, `out_`, `io_`), variable type prefixes, workflow file tags,
-Main.xaml rules, config file rules, logging requirements, error handling, commit protocol,
-plus C# and Python naming standards.
+**Covers:**
+- Argument prefixes: `in_`, `out_`, `io_` — no bare names
+- Variable type prefixes: `str`, `dt`, `dtbl`, `int`, `bool`, `arr`, `dict`
+- Workflow file tag conventions: `[BL]`, `[DB]`, `[Controller]`, `[Queue]`, etc.
+- Main.xaml rules (framework-only — no custom logic)
+- Config file rules (no hardcoded values)
+- Logging: `[DCLI] Log Execution Event` — not bare Log Message
+- Error handling patterns (Try-Catch with specific exception types)
+- Pre-code-review checklist
+- C# naming standards
+- Python naming standards
 
 ---
 
 ## Customizing for Your Org
 
-**1. Fill in `CLAUDE.md`**
+**Step 1 — Fill in `CLAUDE.md`**
 Replace `[Your Name]`, `[Your Org]`, `[Your primary stack]`, and the infrastructure table
-with your actual values.
+with your actual values. Keep it under 4KB.
 
-**2. Fill in `docs/ORCHESTRATOR_STANDARD.md`**
+**Step 2 — Fill in `docs/ORCHESTRATOR_STANDARD.md`**
 Replace `[YOUR_ORG]`, `[YOUR_TENANT]`, and the folder hierarchy table with your
-UiPath Orchestrator tenant details.
+UiPath Orchestrator tenant details. This becomes the single source of truth for
+all Orchestrator context across every project.
 
-**3. Fill in `docs/DEPLOYMENT_STANDARD.md`**
-Replace `[YOUR_SANDBOX_ACCOUNT]` and `[YOUR_GITHUB_ORG]` with your AWS account ID
-and GitHub organization name.
+**Step 3 — Fill in `docs/DEPLOYMENT_STANDARD.md`**
+Replace `[YOUR_SANDBOX_ACCOUNT]` and `[YOUR_GITHUB_ORG]`. Every new web app project
+will extend from this instead of repeating the full runbook.
 
-**4. Push to your own private repo**
-Keep your filled-in version private — it will contain infrastructure URLs and account IDs.
+**Step 4 — Keep your filled version private**
+Fork this repo or create a new private repo. Your filled-in version will contain
+infrastructure URLs, account IDs, and folder paths — keep it internal.
 Use this public repo as the starting template only.
 
 ---
 
 ## install.ps1 / install.sh — What They Do
 
-| Action | Behavior |
-|---|---|
-| Deploy agents | Always — creates `~/.claude/agents/`, copies all 9 agents |
-| CLAUDE.md (fresh) | Copies directly — no prompt |
-| CLAUDE.md (exists, already has framework content) | Skips silently |
-| CLAUDE.md (exists, different content) | Prompts: Replace / Merge / Skip |
-| Replace | Timestamps backup, copies framework version |
-| Merge | Timestamps backup, prints ready-to-paste Claude Code merge prompt |
+Safe to run on any existing machine. The scripts never overwrite machine-specific config.
 
-**Never overwrites** `settings.json`, `settings.local.json`, or `plugins/`.
+| File | Behavior |
+|---|---|
+| `~/.claude/agents/*.md` | Always deployed / updated — creates folder if missing |
+| `~/.claude/CLAUDE.md` (no existing file) | Copied directly |
+| `~/.claude/CLAUDE.md` (already has framework content) | Silently skipped |
+| `~/.claude/CLAUDE.md` (exists, different content, under 4KB) | Prompt: Replace / Merge / Skip |
+| `~/.claude/CLAUDE.md` (exists, over 4KB) | Same prompt + size warning |
+| Replace | Timestamps backup, copies framework version |
+| Merge | Timestamps backup, prints ready-to-paste Claude Code prompt to merge intelligently |
+| `settings.json` | **Never touched** |
+| `settings.local.json` | **Never touched** |
+| `plugins/` | **Never touched** |
+
+The **Merge** option generates a prompt you paste into Claude Code. Claude reads both files, keeps your personal context, adds the DCLI global standards where missing, and keeps the result under 4KB.
+
+---
+
+## Prerequisites
+
+See `SETUP.md` for full CLI install instructions. Short version:
+
+| Tool | Required for | Quick install |
+|---|---|---|
+| `git` | All agents | Built-in / git-scm.com |
+| `gh` | pr-reviewer, release-notes | `winget install GitHub.cli` |
+| `uip` | uipath-helper | `npm install -g @uipath/uipath-cli` |
+| `aws` | docker-advisor, env-checker | `winget install Amazon.AWSCLI` |
+| `dotnet` | dependency-audit (C#) | dot.net/download |
+| `node/npm` | dependency-audit (JS) | nodejs.org |
+| `docker` | docker-advisor | Docker Desktop |
+
+Agents degrade gracefully — if a tool isn't installed, the agent says so and gives you the install command.
 
 ---
 
@@ -178,29 +292,42 @@ Use this public repo as the starting template only.
 
 ```
 claude-project-framework/
-  agents/                    ← 9 global agents (auto-deploy via install scripts)
+  agents/                      ← 15 global agents, auto-deployed by install scripts
   docs/
-    ORCHESTRATOR_STANDARD.md ← org-wide Orchestrator reference (fill in your values)
-    DEPLOYMENT_STANDARD.md   ← org-wide ECS/GitHub Actions pipeline (fill in your values)
+    ORCHESTRATOR_STANDARD.md   ← org-wide Orchestrator reference template
+    DEPLOYMENT_STANDARD.md     ← org-wide ECS/GitHub Actions pipeline template
   templates/
-    uipath-bot/              ← CLAUDE.md, STANDARDS.md, ORCHESTRATOR.md
-    csharp-library/          ← CLAUDE.md, DESIGN.md
-    csharp-api/              ← CLAUDE.md, DESIGN.md, DEPLOYMENT.md
-    nodejs-react/            ← CLAUDE.md, DESIGN.md, DEPLOYMENT.md, ORCHESTRATOR.md
-    python/                  ← CLAUDE.md, DESIGN.md
+    uipath-bot/                ← CLAUDE.md, STANDARDS.md, ORCHESTRATOR.md
+    csharp-library/            ← CLAUDE.md, DESIGN.md
+    csharp-api/                ← CLAUDE.md, DESIGN.md, DEPLOYMENT.md
+    nodejs-react/              ← CLAUDE.md, DESIGN.md, DEPLOYMENT.md, ORCHESTRATOR.md
+    python/                    ← CLAUDE.md, DESIGN.md
   windows/
-    RTK.md                   ← RTK token optimizer (Windows only, deployed by install.ps1)
-  CLAUDE.md                  ← global Claude context (customize for your org)
-  STANDARDS_UIPATH.md        ← UiPath coding standards template
-  install.sh                 ← Linux/Mac global install
-  install.ps1                ← Windows global install
-  new-project.sh             ← Linux/Mac project scaffold
-  new-project.ps1            ← Windows project scaffold
+    RTK.md                     ← RTK token optimizer (Windows only)
+  CLAUDE.md                    ← global Claude context template
+  STANDARDS_UIPATH.md          ← UiPath coding standards (copy to project as STANDARDS.md)
+  SETUP.md                     ← CLI prerequisites and MCP server setup
+  install.sh                   ← Linux/Mac install
+  install.ps1                  ← Windows install
+  new-project.sh               ← Linux/Mac project scaffold
+  new-project.ps1              ← Windows project scaffold
 ```
+
+---
+
+## The Payoff
+
+| Without this framework | With this framework |
+|---|---|
+| 17KB CLAUDE.md loaded every message | 3.5KB CLAUDE.md — 79% less context overhead |
+| Same model for everything | Haiku for 14/15 tasks — ~12× cheaper per lookup |
+| Org standards copy-pasted into every project | One global standard, project Delta inherits |
+| New project = blank folder, figure it out | New project = scaffold script, MDs ready in 30 seconds |
+| No structure on what Claude reads when | Explicit doc loading table — Claude knows what to load and when |
+| Agent that reviews logs needs full project context | log-analyzer reads the log only, nothing else |
 
 ---
 
 ## Contributing
 
-Issues and PRs welcome. If you extend the framework for your stack (Java, Go, etc.)
-a template PR is a good place to start.
+Issues and PRs welcome. Stack extensions (Java, Go, Terraform, etc.) are a great place to start.
