@@ -270,6 +270,71 @@ The **Merge** option generates a prompt you paste into Claude Code. Claude reads
 
 ---
 
+## Hooks — Zero-Token Automation
+
+Hooks are shell scripts that fire on Claude Code events. They run entirely on your machine — no API call, no model, no tokens. The only token cost is when a hook fires a warning and Claude reads it (~20 tokens). Otherwise: free.
+
+This framework ships two hooks, both wired to the `Write` tool:
+
+### secret-scanner (PreToolUse:Write)
+
+Fires **before** Claude writes any file. Scans the content for secret patterns and **blocks the write** if it finds one.
+
+```
+Claude tries to write appsettings.json containing "password=hunter2"
+  → secret-scanner fires
+  → pattern matched: password\s*=\s*.{4,}
+  → exits non-zero → write BLOCKED
+  → Claude sees the error, stops, explains what it found
+```
+
+Patterns it catches: AWS access keys, Anthropic/OpenAI API keys, private keys, `password=`, `client_secret=`, `api_key=` with values. Skips `.env.example` and `.env.sample` — those are intentionally showing key names.
+
+**Why this matters:** `env-checker` and `security-check` agents only run when you ask them. This hook is always on. You can't forget to run it.
+
+### claude-md-guard (PostToolUse:Write)
+
+Fires **after** Claude writes any `CLAUDE.md` file. Checks the file size. If over 4KB, outputs a warning Claude reads on the next turn.
+
+```
+Claude writes a CLAUDE.md that grew to 6.2KB during a session
+  → claude-md-guard fires
+  → "CLAUDE.md is 6.2KB — over the 4KB limit"
+  → Claude trims before continuing
+```
+
+**Why this matters:** CLAUDE.md is loaded on every message. Letting it drift to 6KB costs 79% more context overhead per message than keeping it under 4KB. The hook enforces the rule automatically.
+
+### Wiring Hooks Into settings.json
+
+The install scripts deploy the hook files to `~/.claude/hooks/` and print the exact JSON to add. Merge into the `hooks` section of your `settings.json`:
+
+```json
+"hooks": {
+  "PreToolUse": [
+    {
+      "matcher": "Write",
+      "hooks": [{"type": "command", "command": "~/.claude/hooks/secret-scanner.sh"}]
+    }
+  ],
+  "PostToolUse": [
+    {
+      "matcher": "Write",
+      "hooks": [{"type": "command", "command": "~/.claude/hooks/claude-md-guard.sh"}]
+    }
+  ]
+}
+```
+
+Windows — use the `.ps1` versions:
+```json
+"command": "powershell -File %USERPROFILE%\\.claude\\hooks\\secret-scanner.ps1"
+```
+
+Keep any existing hooks (like RTK) — just add to the arrays, don't replace them.
+
+---
+
 ## Prerequisites
 
 See `SETUP.md` for full CLI install instructions. Short version:

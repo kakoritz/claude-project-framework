@@ -91,6 +91,29 @@ if (-not (Test-Path $claudeDest)) {
     }
 }
 
+# ── Hooks ─────────────────────────────────────────────────────────────────────
+$HooksDir = "$ClaudeDir\hooks"
+New-Item -ItemType Directory -Force -Path $HooksDir | Out-Null
+Get-ChildItem "$RepoDir\hooks\*.ps1" | ForEach-Object {
+    Copy-Item $_.FullName "$HooksDir\$($_.Name)" -Force
+    Write-Host "  OK hooks\$($_.Name)"
+}
+
 Write-Host ""
 Write-Host "Done. Restart Claude Code to pick up changes."
+Write-Host ""
+Write-Host "  ┌─ Add hooks to %USERPROFILE%\.claude\settings.json ─────────────────┐"
+Write-Host "  │  Merge this into your hooks section (keep any existing hooks):    │"
+Write-Host "  │                                                                   │"
+Write-Host "  │  `"PreToolUse`": [{                                                 │"
+Write-Host "  │    `"matcher`": `"Write`",                                            │"
+Write-Host "  │    `"hooks`": [{`"type`": `"command`",                                  │"
+Write-Host "  │      `"command`": `"powershell -File $HooksDir\secret-scanner.ps1`"}] │"
+Write-Host "  │  }],                                                              │"
+Write-Host "  │  `"PostToolUse`": [{                                                │"
+Write-Host "  │    `"matcher`": `"Write`",                                            │"
+Write-Host "  │    `"hooks`": [{`"type`": `"command`",                                  │"
+Write-Host "  │      `"command`": `"powershell -File $HooksDir\claude-md-guard.ps1`"}] │"
+Write-Host "  │  }]                                                               │"
+Write-Host "  └───────────────────────────────────────────────────────────────────┘"
 Write-Host ""

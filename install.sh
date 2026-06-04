@@ -86,6 +86,30 @@ else
     fi
 fi
 
+# ── Hooks ─────────────────────────────────────────────────────────────────────
+HOOKS_DIR="$CLAUDE_DIR/hooks"
+mkdir -p "$HOOKS_DIR"
+for hook in "$REPO_DIR/hooks/"*.sh; do
+    cp "$hook" "$HOOKS_DIR/$(basename "$hook")"
+    chmod +x "$HOOKS_DIR/$(basename "$hook")"
+    echo "  OK hooks/$(basename "$hook")"
+done
+
 echo ""
 echo "Done. Restart Claude Code to pick up changes."
+echo ""
+echo "  ┌─ Add hooks to ~/.claude/settings.json ────────────────────────────────┐"
+echo "  │  Merge this into your hooks section (keep any existing hooks):        │"
+echo "  │                                                                       │"
+echo "  │  \"PreToolUse\": [{                                                     │"
+echo "  │    \"matcher\": \"Write\",                                                │"
+echo "  │    \"hooks\": [{\"type\": \"command\",                                      │"
+echo "  │      \"command\": \"$HOOKS_DIR/secret-scanner.sh\"}]                      │"
+echo "  │  }],                                                                  │"
+echo "  │  \"PostToolUse\": [{                                                    │"
+echo "  │    \"matcher\": \"Write\",                                                │"
+echo "  │    \"hooks\": [{\"type\": \"command\",                                      │"
+echo "  │      \"command\": \"$HOOKS_DIR/claude-md-guard.sh\"}]                     │"
+echo "  │  }]                                                                   │"
+echo "  └───────────────────────────────────────────────────────────────────────┘"
 echo ""
