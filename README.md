@@ -249,6 +249,65 @@ Use this public repo as the starting template only.
 
 ---
 
+## RTK — Token Optimizer for Bash Output
+
+RTK (Rust Token Killer) is a transparent proxy that sits between Claude and every bash command it runs. It intercepts the **output** of shell commands and compresses it before Claude reads it — 60–90% fewer tokens on terminal output, with no change to your workflow.
+
+### How It Works
+
+RTK is wired as a `PreToolUse:Bash` hook in `settings.json`. Every time Claude runs a bash command, RTK intercepts it first:
+
+```
+Claude wants to run: git status
+  → PreToolUse:Bash fires
+  → RTK receives the command
+  → RTK runs it, compresses the output
+  → Claude gets a lean summary (not 500 lines of raw output)
+  → Zero behavior change — Claude still gets all the information it needs
+```
+
+**It intercepts ALL bash calls — not just git.** File listings, npm output, dotnet builds, log tails — anything Claude runs in a shell goes through RTK. For commands RTK has handlers for, output is compressed. For commands it doesn't recognize, it passes through unchanged with zero interference.
+
+**It works in VS Code and terminal equally.** RTK is wired to `settings.json`, which Claude Code reads regardless of whether you're in the VS Code extension or a standalone terminal. Same hook, same savings, both environments.
+
+### Key Commands
+
+```bash
+rtk --version          # Verify RTK is installed correctly
+rtk gain               # Show token savings from current session
+rtk gain --history     # Show savings across all past sessions
+rtk discover           # Analyze your Claude Code history — shows where RTK IS saving
+                       # tokens and where it ISN'T (gaps you might address)
+rtk proxy <cmd>        # Run a command through RTK manually (for debugging)
+```
+
+Run `rtk discover` after a few sessions. It reads your actual Claude Code history and tells you which commands are generating the most output and where the biggest savings opportunities are.
+
+### RTK Is Windows-Only in This Framework
+
+RTK is included in `windows/RTK.md` and deployed by `install.ps1`. It requires a separate binary install — see `windows/RTK.md` for verification steps.
+
+> ⚠️ **Name collision:** If `rtk gain` fails after install, you may have a different `rtk` binary (`reachingforthejack/rtk`, the Rust Type Kit) on your PATH. `which rtk` will show which one you have.
+
+### Wiring RTK Into settings.json
+
+RTK requires a manual entry in `settings.json` — add it to your `PreToolUse` hooks array alongside the secret-scanner:
+
+```json
+"PreToolUse": [
+  {
+    "matcher": "Bash",
+    "hooks": [{"type": "command", "command": "rtk hook claude"}]
+  },
+  {
+    "matcher": "Write",
+    "hooks": [{"type": "command", "command": "%USERPROFILE%\\.claude\\hooks\\secret-scanner.ps1"}]
+  }
+]
+```
+
+---
+
 ## install.ps1 / install.sh — What They Do
 
 Safe to run on any existing machine. The scripts never overwrite machine-specific config.
@@ -307,31 +366,36 @@ Claude writes a CLAUDE.md that grew to 6.2KB during a session
 
 ### Wiring Hooks Into settings.json
 
-The install scripts deploy the hook files to `~/.claude/hooks/` and print the exact JSON to add. Merge into the `hooks` section of your `settings.json`:
+`install.sh` / `install.ps1` deploy the hook **files** but do not touch `settings.json`.
+Run the dedicated wiring script to safely merge the hooks in:
 
-```json
-"hooks": {
-  "PreToolUse": [
-    {
-      "matcher": "Write",
-      "hooks": [{"type": "command", "command": "~/.claude/hooks/secret-scanner.sh"}]
-    }
-  ],
-  "PostToolUse": [
-    {
-      "matcher": "Write",
-      "hooks": [{"type": "command", "command": "~/.claude/hooks/claude-md-guard.sh"}]
-    }
-  ]
-}
+```bash
+# Linux / Mac — after install.sh
+./wire-hooks.sh
+
+# Windows — after install.ps1
+.\wire-hooks.ps1
 ```
 
-Windows — use the `.ps1` versions:
-```json
-"command": "powershell -File %USERPROFILE%\\.claude\\hooks\\secret-scanner.ps1"
+The wire script:
+1. Backs up `settings.json` with a timestamp before touching it
+2. **Checks if each hook is already wired** — skips if present, adds only if missing
+3. Merges into the existing hooks array — never replaces your full `settings.json`
+4. Safe to run multiple times — idempotent
+
+Output:
+```
+Wire Hooks into settings.json
+==============================
+  Backup: ~/.claude/settings.json.bak.20260604-143021
+  Added: secret-scanner (PreToolUse:Write)
+  Added: claude-md-guard (PostToolUse:Write)
+  settings.json updated.
+
+Done. Restart Claude Code to activate hooks.
 ```
 
-Keep any existing hooks (like RTK) — just add to the arrays, don't replace them.
+Your existing hooks (RTK, any others) are preserved — the script only appends to the arrays.
 
 ---
 
