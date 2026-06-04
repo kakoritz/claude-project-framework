@@ -12,10 +12,16 @@ echo ""
 echo "DCLI Claude Global Install"
 echo "=========================="
 
-# ── Agents (always safe — create/overwrite) ───────────────────────────────────
+# ── Read model names from config.yaml ────────────────────────────────────────
+HAIKU=$(python3 -c "import yaml; print(yaml.safe_load(open('$REPO_DIR/config.yaml'))['models']['haiku'])" 2>/dev/null || echo "claude-haiku-4-5-20251001")
+SONNET=$(python3 -c "import yaml; print(yaml.safe_load(open('$REPO_DIR/config.yaml'))['models']['sonnet'])" 2>/dev/null || echo "claude-sonnet-4-6")
+OPUS=$(python3 -c "import yaml; print(yaml.safe_load(open('$REPO_DIR/config.yaml'))['models']['opus'])" 2>/dev/null || echo "claude-opus-4-8")
+
+# ── Agents (always safe — create/overwrite, substitute model names) ───────────
 mkdir -p "$AGENTS_DIR"
 for agent in "$REPO_DIR/agents/"*.md; do
-    cp "$agent" "$AGENTS_DIR/$(basename "$agent")"
+    dest="$AGENTS_DIR/$(basename "$agent")"
+    sed "s/claude-haiku-4-5-20251001/$HAIKU/g; s/claude-sonnet-4-6/$SONNET/g; s/claude-opus-4-8/$OPUS/g" "$agent" > "$dest"
     echo "  OK agents/$(basename "$agent")"
 done
 

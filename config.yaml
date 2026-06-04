@@ -1,0 +1,7 @@
+# Model configuration — single source of truth for all agents
+# Update here, re-run install.sh / install.ps1 to propagate to all 15 agents
+
+models:
+  haiku:  claude-haiku-4-5-20251001
+  sonnet: claude-sonnet-4-6
+  opus:   claude-opus-4-8

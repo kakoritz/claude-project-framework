@@ -6,8 +6,11 @@ $data = $raw | ConvertFrom-Json
 $file    = $data.tool_input.file_path
 $content = $data.tool_input.content
 
-# .env.example and .env.sample are meant to show key names — allow them
-if ($file -match "\.env\.example|\.env\.sample") { exit 0 }
+# Files to always allow
+if ($file -match "\.env\.example|\.env\.sample|\.env\.template|\.test\.|\.spec\.|_test\.|\.md$") { exit 0 }
+
+# Allow if content has # noscan directive
+if ($content -match "# noscan") { exit 0 }
 
 $patterns = @(
     'AKIA[0-9A-Z]{16}',

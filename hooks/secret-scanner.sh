@@ -6,8 +6,14 @@ RAW=$(cat)
 FILE=$(echo "$RAW" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('tool_input',{}).get('file_path',''))" 2>/dev/null)
 CONTENT=$(echo "$RAW" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('tool_input',{}).get('content',''))" 2>/dev/null)
 
-# .env.example and .env.sample are meant to show key names — allow them
-if [[ "$FILE" == *".env.example"* ]] || [[ "$FILE" == *".env.sample"* ]]; then
+# Files to always allow
+SKIP_PATTERNS=(".env.example" ".env.sample" ".env.template" "*.test.*" "*.spec.*" "*_test.*" "*.md")
+for pat in "${SKIP_PATTERNS[@]}"; do
+    case "$FILE" in $pat) exit 0 ;; esac
+done
+
+# Allow if content has # noscan directive
+if echo "$CONTENT" | grep -q "# noscan"; then
     exit 0
 fi
 

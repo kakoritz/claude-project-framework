@@ -1,0 +1,68 @@
+name: Claude Framework Validation
+
+on:
+  pull_request:
+    branches: [main, development]
+  push:
+    branches: [development]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    name: Validate Claude docs
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check CLAUDE.md size
+        run: |
+          if [ -f "CLAUDE.md" ]; then
+            SIZE=$(wc -c < CLAUDE.md)
+            echo "CLAUDE.md: $SIZE bytes"
+            if [ "$SIZE" -gt 4096 ]; then
+              echo "::error file=CLAUDE.md::CLAUDE.md is ${SIZE} bytes — over 4KB limit. Move detail to DESIGN.md."
+              exit 1
+            fi
+          fi
+
+      - name: Check Delta MDs have Extends line
+        run: |
+          FAIL=0
+          for md in ORCHESTRATOR.md DEPLOYMENT.md; do
+            if [ -f "$md" ]; then
+              if ! grep -q "^Extends:" "$md"; then
+                echo "::warning file=$md::$md is missing 'Extends:' line — should reference global standard"
+                FAIL=1
+              fi
+            fi
+          done
+
+      - name: Check for unfilled placeholders
+        run: |
+          FAIL=0
+          for md in *.md; do
+            [ -f "$md" ] || continue
+            if grep -qE "\[YOUR_[A-Z_]+\]|\[your-[a-z-]+\]" "$md"; then
+              echo "::warning file=$md::$md has unfilled [placeholder] values"
+              grep -nE "\[YOUR_[A-Z_]+\]|\[your-[a-z-]+\]" "$md" | while read line; do
+                echo "  $line"
+              done
+              FAIL=1
+            fi
+          done
+
+      - name: Check no .env committed
+        run: |
+          if git ls-files | grep -qE "^\.env$"; then
+            echo "::error::.env file is committed — remove it and add to .gitignore"
+            exit 1
+          fi
+
+      - name: Validate agent count (framework repo only)
+        if: hashFiles('agents/*.md') != ''
+        run: |
+          COUNT=$(ls agents/*.md 2>/dev/null | wc -l)
+          echo "Agents in repo: $COUNT"
+          if [ "$COUNT" -lt 15 ]; then
+            echo "::warning::Only $COUNT agents in repo — expected 15"
+          fi

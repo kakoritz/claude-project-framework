@@ -676,6 +676,43 @@ claude-project-framework/
 
 ---
 
+## Troubleshooting
+
+**Agent isn't triggering**
+Agents route by matching your message against their `description` field. If one isn't firing, try phrasing closer to the trigger examples in the agent table. Also confirm agents are installed: `ls ~/.claude/agents/` should show 15 files.
+
+**`uip` command not found**
+`uipath-helper` falls back to reading `ORCHESTRATOR.md` statically when `uip` isn't installed — it still works, just no live Orchestrator queries. Install: `npm install -g @uipath/uipath-cli` then `uip auth login`.
+
+**`gh auth` expired**
+`pr-reviewer` and `release-notes` need a live GitHub session. Run `gh auth login` to re-authenticate. Agents fall back to reading local git history when gh auth fails.
+
+**ANTHROPIC_API_KEY missing or expired**
+Claude Code won't start. Set the key: `export ANTHROPIC_API_KEY=sk-ant-...` (Linux/Mac) or `$env:ANTHROPIC_API_KEY="sk-ant-..."` (PowerShell). Add to your shell profile to persist.
+
+**Hooks aren't firing**
+1. Confirm hook files exist: `ls ~/.claude/hooks/`
+2. Confirm hooks are wired: `cat ~/.claude/settings.json | grep -A5 hooks`
+3. If not wired: run `./wire-hooks.sh`
+4. Restart Claude Code after any settings.json change
+
+**`rtk gain` fails with "command not found"**
+Either RTK isn't installed, or a different `rtk` binary is on your PATH (name collision with Rust Type Kit). Run `which rtk` — if it points to the wrong binary, install the correct RTK and ensure it takes PATH priority.
+
+**secret-scanner blocking a legitimate file**
+Add `# noscan` anywhere in the file content to bypass the scanner for that write. For test files, rename to `*.test.*` or `*.spec.*` — those are automatically excluded.
+
+**CLAUDE.md keeps triggering the 4KB guard**
+The guard fires at 4096 bytes. Move API signatures, endpoint lists, and runbooks to `DESIGN.md`, `ORCHESTRATOR.md`, or `DEPLOYMENT.md`. CLAUDE.md should contain rules and file names only.
+
+**`validate.sh` shows unfilled [placeholders]**
+Open the flagged MD files and replace `[YOUR_ORG]`, `[YOUR_TENANT]`, etc. with your actual values. These are the org-specific fields in `CLAUDE.md`, `ORCHESTRATOR_STANDARD.md`, and `DEPLOYMENT_STANDARD.md`.
+
+**GitHub Actions validate job failing**
+The workflow checks: CLAUDE.md size, Extends: lines, unfilled placeholders, no committed .env. Read the job output — it pinpoints the exact file and line.
+
+---
+
 ## Contributing
 
 Issues and PRs welcome. Stack extensions (Java, Go, Terraform, etc.) are a great place to start.

@@ -73,4 +73,30 @@ EOF
 
 echo ""
 echo "Done. Restart Claude Code to activate hooks."
+
+# ── RTK detection ─────────────────────────────────────────────────────────────
+echo ""
+if command -v rtk &>/dev/null; then
+    RTK_VER=$(rtk --version 2>/dev/null || echo "unknown version")
+    echo "  RTK detected ($RTK_VER)"
+    if python3 -c "import json; s=json.load(open('$SETTINGS')); hooks=s.get('hooks',{}); pre=hooks.get('PreToolUse',[]); exit(0 if any('rtk' in str(h) for h in pre) else 1)" 2>/dev/null; then
+        echo "  RTK hook already wired in settings.json"
+    else
+        read -p "  Wire RTK hook into settings.json? (y/n): " wire_rtk
+        if [ "$wire_rtk" = "y" ]; then
+            python3 - <<EOF
+import json
+with open('$SETTINGS','r') as f: s=json.load(f)
+if 'hooks' not in s: s['hooks']={}
+pre=s['hooks'].get('PreToolUse',[])
+pre.insert(0,{"matcher":"Bash","hooks":[{"type":"command","command":"rtk hook claude"}]})
+s['hooks']['PreToolUse']=pre
+with open('$SETTINGS','w') as f: json.dump(s,f,indent=2)
+print("  RTK hook wired (PreToolUse:Bash)")
+EOF
+        fi
+    fi
+else
+    echo "  RTK not detected — skipping (install RTK binary to enable bash output compression)"
+fi
 echo ""

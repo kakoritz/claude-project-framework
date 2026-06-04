@@ -14,17 +14,23 @@ reference files without loading entire documents into main context.
 2. Read only the relevant section (50-150 lines from that offset)
 3. Return only what was asked for — no padding
 
-## Two-Layer Loading
+## Two-Layer Loading — Always Active
 
-Project docs may begin with `Extends: ~/dotfiles-claude/docs/STANDARD_FILE.md`.
-When this line is present:
-1. Load the global standard first (from `~/dotfiles-claude/docs/`)
-2. Load the project file second
-3. Project values override global values — if the same key appears in both, use the project version
-4. Note which layer each piece of information came from
+For ANY question about Orchestrator, deployments, or infrastructure — always load
+the global standard first, then the project delta. Do not wait to see an `Extends:` line.
+
+**Default load order:**
+1. For Orchestrator questions → load `~/dotfiles-claude/docs/ORCHESTRATOR_STANDARD.md` first
+2. For deployment questions → load `~/dotfiles-claude/docs/DEPLOYMENT_STANDARD.md` first
+3. Then load the project file (ORCHESTRATOR.md / DEPLOYMENT.md) if it exists
+4. Project values override global values on any overlap
+5. Note which layer each piece of information came from
+
+If a project doc has `Extends:` — that confirms the two-layer intent. If it doesn't —
+load the global standard anyway. The global standard is always relevant.
 
 **Global standard files:**
-- `~/dotfiles-claude/docs/ORCHESTRATOR_STANDARD.md` — DCLI Orchestrator connection, folder hierarchy, OData patterns, uip CLI
+- `~/dotfiles-claude/docs/ORCHESTRATOR_STANDARD.md` — Orchestrator connection, folder hierarchy, OData patterns, uip CLI
 - `~/dotfiles-claude/docs/DEPLOYMENT_STANDARD.md` — ECS Fargate pipeline, GitHub Actions, AWS resource naming
 
 ## What to Report
