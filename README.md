@@ -92,6 +92,225 @@ The `doc-lookup` agent handles the merge automatically — it loads the global s
 
 ---
 
+## Full Setup Sequence
+
+Follow this in order. Nothing is optional until marked.
+
+---
+
+### Step 1 — Install Claude Code
+
+```bash
+npm install -g @anthropic-ai/claude-code
+claude --version   # verify
+```
+
+Sign in with your Anthropic account when prompted. This is the foundation everything else runs on.
+
+---
+
+### Step 2 — Clone This Repo
+
+```bash
+# Linux / Mac
+git clone https://github.com/kakoritz/claude-project-framework.git ~/claude-project-framework
+cd ~/claude-project-framework
+
+# Windows (PowerShell)
+git clone https://github.com/kakoritz/claude-project-framework.git $env:USERPROFILE\claude-project-framework
+cd $env:USERPROFILE\claude-project-framework
+```
+
+---
+
+### Step 3 — Run the Install Script
+
+Deploys all 15 agents, CLAUDE.md, RTK.md, and hook files to `~/.claude/`.
+
+```bash
+# Linux / Mac
+chmod +x install.sh && ./install.sh
+
+# Windows
+.\install.ps1
+```
+
+If you already have a `CLAUDE.md`, it will prompt you: **Replace / Merge / Skip**. Choose Merge if you have personal content you want to keep — it generates a Claude Code prompt to do the merge intelligently.
+
+---
+
+### Step 4 — Wire the Hooks
+
+Adds secret-scanner and claude-md-guard to your `settings.json`. Checks before inserting — safe to run multiple times.
+
+```bash
+# Linux / Mac
+./wire-hooks.sh
+
+# Windows
+.\wire-hooks.ps1
+```
+
+Restart Claude Code after this step.
+
+---
+
+### Step 5 — Install the GitHub CLI
+
+Required for `pr-reviewer` and `release-notes` agents to read diffs and git history.
+
+```bash
+# Windows
+winget install GitHub.cli
+
+# Mac
+brew install gh
+
+# Linux
+sudo apt install gh   # or see https://cli.github.com
+```
+
+```bash
+gh auth login   # one-time authentication
+```
+
+---
+
+### Step 6 — Install Stack-Specific CLIs
+
+Install only what applies to your work:
+
+**UiPath developers:**
+```bash
+npm install -g @uipath/uipath-cli
+uip auth login    # one-time — authenticates to your Orchestrator
+```
+Required for `uipath-helper` to do live folder/queue/process lookups. Without it, the agent falls back to reading `ORCHESTRATOR.md` only.
+
+**.NET / C# developers:**
+```bash
+# Install .NET SDK from https://dot.net/download
+dotnet --version   # verify
+```
+Required for `dependency-audit` to check C# package vulnerabilities.
+
+**Node.js developers:**
+```bash
+# Install from https://nodejs.org
+node --version && npm --version   # verify
+```
+Required for `dependency-audit` to run `npm outdated` and `npm audit`.
+
+**Python developers:**
+```bash
+# Install from https://python.org
+python3 --version && pip --version   # verify
+pip install pip-audit   # optional — adds vulnerability scanning
+```
+
+**AWS / ECS work:**
+```bash
+# Windows
+winget install Amazon.AWSCLI
+
+# Mac
+brew install awscli
+
+# Verify
+aws --version
+aws configure   # one-time: access key, secret, region
+```
+
+**Docker / containerization:**
+Install Docker Desktop from https://www.docker.com/products/docker-desktop
+
+---
+
+### Step 7 — Wire RTK (Windows Only)
+
+RTK compresses bash command output before Claude reads it — 60–90% fewer tokens on terminal output. See the [RTK section](#rtk--token-optimizer-for-bash-output) for full details.
+
+1. Install the RTK binary (see `windows/RTK.md` for your org's install method)
+2. Verify: `rtk --version` and `rtk gain`
+3. Add to `settings.json` manually — this is the one entry `wire-hooks.ps1` does NOT add (RTK is a separate tool):
+
+```json
+"PreToolUse": [
+  {
+    "matcher": "Bash",
+    "hooks": [{"type": "command", "command": "rtk hook claude"}]
+  }
+]
+```
+
+> The `wire-hooks.ps1` script preserves any existing `PreToolUse` entries — just add the RTK block to the array alongside what wire-hooks added.
+
+---
+
+### Step 8 — Install the UiPath Marketplace Plugin (Optional)
+
+Gives Claude Code live access to UiPath Orchestrator data through MCP.
+
+In Claude Code terminal: `/install-plugin uipath@uipath-marketplace`
+
+Or add to `settings.json`:
+```json
+"enabledPlugins": {
+  "uipath@uipath-marketplace": true
+}
+```
+
+---
+
+### Step 9 — Set Up Your First Project
+
+```bash
+# Linux / Mac
+./new-project.sh
+
+# Windows
+.\new-project.ps1
+```
+
+Pick a type (UiPath Bot / C# Library / C# API / Web UX / Python). The script creates the project folder with pre-populated Claude MD files. Fill in the `[placeholder]` values — takes about 5 minutes.
+
+**UiPath projects:** the generated folder includes `STANDARDS.md` already. Copy it to your project root if scaffolding into an existing project.
+
+---
+
+### Step 10 — Fill In Your Org's Global Docs (One-Time, Team Lead)
+
+Someone on the team does this once. Everyone else inherits it.
+
+1. **`CLAUDE.md`** — add your name, org, stack, infrastructure URLs
+2. **`docs/ORCHESTRATOR_STANDARD.md`** — add your Orchestrator tenant, folder hierarchy
+3. **`docs/DEPLOYMENT_STANDARD.md`** — add your AWS account ID, GitHub org name
+4. Push to your own **private** fork of this repo
+5. Team clones your private fork — not this public one
+
+---
+
+### Verify Everything
+
+```bash
+# Agents live?
+ls ~/.claude/agents/   # should show 15 .md files
+
+# Hooks wired?
+cat ~/.claude/settings.json | grep -A5 "hooks"
+
+# CLIs ready?
+git --version && gh --version
+uip --version 2>/dev/null || echo "uip: not installed"
+dotnet --version 2>/dev/null || echo "dotnet: not installed"
+
+# RTK (Windows — run in PowerShell)
+rtk --version
+rtk gain
+```
+
+---
+
 ## Quick Start
 
 ```bash
