@@ -76,6 +76,12 @@ Defined in `~/.claude/agents/`. These run on every project automatically.
 | `release-notes` | Haiku | User asks to update release notes, generate a changelog entry, or create a release summary |
 | `test-advisor` | Sonnet | User asks to write unit tests, generate tests for new code, or audit test coverage |
 | `uipath-reviewer` | Haiku | User asks to prep a UiPath project for code review or run pre-code-review checklist |
+| `dependency-audit` | Haiku | User asks if packages are up to date, wants vulnerability check, asks what's outdated |
+| `env-checker` | Haiku | User asks if ready to deploy, wants .env validated, checks for committed secrets |
+| `db-advisor` | Haiku | User shares SQL, asks about stored proc performance, schema review, index suggestions |
+| `jira-helper` | Haiku | User asks to write a Jira ticket, format commit message, write acceptance criteria |
+| `docker-advisor` | Haiku | User shares Dockerfile, asks about container optimization, layer caching, ECS patterns |
+| `azure-helper` | Haiku | User asks about Azure AD / MSAL setup, app registrations, AADSTS errors, auth flows |
 
 ### Project Agents (Per-Project)
 
