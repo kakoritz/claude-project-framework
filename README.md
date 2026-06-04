@@ -8,6 +8,52 @@ smart install scripts — all designed around one principle: **never pay for tok
 
 ---
 
+## Architecture Overview
+
+```mermaid
+flowchart TD
+    U([Engineer]) --> CC[Claude Code Session]
+
+    subgraph AUTO["Automatic — always on, zero tokens"]
+        RTK["RTK hook\nIntercepts every bash call\nCompresses output 60–90%"]
+        SS["secret-scanner\nBlocks writes containing secrets\nbefore they hit disk"]
+        MG["claude-md-guard\nWarns when CLAUDE.md\nexceeds 4KB"]
+    end
+
+    subgraph GLOBAL["Global Layer — ~/.claude/"]
+        GCM["CLAUDE.md\nRules · Agent roster · Org infra\nLoaded on every message"]
+        subgraph AGENTS["15 Auto-routing Agents"]
+            HA["Haiku × 14\nlog-analyzer · doc-lookup · pr-reviewer\nstandards-checker · security-check\nuipath-helper · uipath-reviewer\ndependency-audit · env-checker\ndb-advisor · jira-helper\ndocker-advisor · azure-helper\nrelease-notes"]
+            SA["Sonnet × 1\ntest-advisor"]
+        end
+    end
+
+    subgraph STANDARDS["Org Standards — dotfiles-claude/docs/"]
+        OS["ORCHESTRATOR_STANDARD.md\nConnection · Folder hierarchy\nOData patterns · uip CLI"]
+        DS["DEPLOYMENT_STANDARD.md\nECS Fargate · GitHub Actions\nAWS resource naming"]
+    end
+
+    subgraph PROJECT["Project Layer — project-root/"]
+        PCM["CLAUDE.md\nRules only · under 4KB"]
+        DES["DESIGN.md\nArchitecture · API surface · Models"]
+        ORC["ORCHESTRATOR.md\nThis project's queue IDs\nFolder paths · Process keys only"]
+        DEP["DEPLOYMENT.md\nThis project's APP_NAME\nARNs · Env vars only"]
+    end
+
+    CC -->|"bash call"| RTK
+    CC -->|"PreToolUse Write"| SS
+    CC -->|"PostToolUse Write"| MG
+    CC -->|"loaded every message"| GCM
+    GCM -->|"intent match"| AGENTS
+    CC -->|"on demand via doc-lookup"| PROJECT
+    ORC -->|"extends"| OS
+    DEP -->|"extends"| DS
+```
+
+**Three layers, one rule:** if it's the same across all projects → global standard. If it's unique to one project → Delta MD. If it's automatic safety → hook.
+
+---
+
 ## Why This Exists — The Token Problem
 
 When you open Claude Code on a project, Claude reads your `CLAUDE.md` file on **every single message** of the session. If that file is 17KB (not unusual for a project that's been running a while), you're spending ~4,250 tokens just on context overhead — before you've even asked anything.
