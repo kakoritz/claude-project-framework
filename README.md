@@ -640,25 +640,33 @@ Agents degrade gracefully — if a tool isn't installed, the agent says so and g
 
 ```
 claude-project-framework/
-  agents/                      ← 15 global agents, auto-deployed by install scripts
+  agents/                      ← 15 global agents (auto-deployed, model names from config.yaml)
   docs/
-    ORCHESTRATOR_STANDARD.md   ← org-wide Orchestrator reference template
-    DEPLOYMENT_STANDARD.md     ← org-wide ECS/GitHub Actions pipeline template
+    ORCHESTRATOR_STANDARD.md   ← org-wide Orchestrator reference (fill in your values)
+    DEPLOYMENT_STANDARD.md     ← org-wide ECS/GitHub Actions pipeline (fill in your values)
+  hooks/
+    secret-scanner.sh/.ps1     ← PreToolUse:Write — blocks writes with secrets
+    claude-md-guard.sh/.ps1    ← PostToolUse:Write — warns when CLAUDE.md > 4KB
   templates/
     uipath-bot/                ← CLAUDE.md, STANDARDS.md, ORCHESTRATOR.md
     csharp-library/            ← CLAUDE.md, DESIGN.md
     csharp-api/                ← CLAUDE.md, DESIGN.md, DEPLOYMENT.md
     nodejs-react/              ← CLAUDE.md, DESIGN.md, DEPLOYMENT.md, ORCHESTRATOR.md
     python/                    ← CLAUDE.md, DESIGN.md
+  tests/
+    README.md                  ← Agent test matrix + sample inputs for manual verification
   windows/
     RTK.md                     ← RTK token optimizer (Windows only)
-  CLAUDE.md                    ← global Claude context template
+  .github/workflows/
+    validate.yml               ← CI: CLAUDE.md size, Extends: lines, placeholders, no .env
+  config.yaml                  ← Model names — update here, re-run install to propagate
+  CLAUDE.md                    ← global Claude context template (fill in your org)
   STANDARDS_UIPATH.md          ← UiPath coding standards (copy to project as STANDARDS.md)
   SETUP.md                     ← CLI prerequisites and MCP server setup
-  install.sh                   ← Linux/Mac install
-  install.ps1                  ← Windows install
-  new-project.sh               ← Linux/Mac project scaffold
-  new-project.ps1              ← Windows project scaffold
+  validate.sh / validate.ps1   ← Check framework setup and project doc health
+  install.sh / install.ps1     ← Deploy agents, hooks, CLAUDE.md
+  wire-hooks.sh / wire-hooks.ps1 ← Wire hooks + RTK into settings.json
+  new-project.sh / new-project.ps1 ← Interactive project scaffold
 ```
 
 ---
@@ -673,6 +681,82 @@ claude-project-framework/
 | New project = blank folder, figure it out | New project = scaffold script, MDs ready in 30 seconds |
 | No structure on what Claude reads when | Explicit doc loading table — Claude knows what to load and when |
 | Agent that reviews logs needs full project context | log-analyzer reads the log only, nothing else |
+
+---
+
+## Keeping Models Up to Date
+
+All 15 agents reference model names from a single file: `config.yaml`.
+
+```yaml
+models:
+  haiku:  claude-haiku-4-5-20251001
+  sonnet: claude-sonnet-4-6
+  opus:   claude-opus-4-8
+```
+
+When Anthropic releases new models, update `config.yaml` and re-run `install.sh` / `install.ps1`. The install script substitutes the new names into every agent file on copy — you never edit agent files directly for model updates.
+
+---
+
+## Validating Your Setup
+
+Run after install or after changing project docs to catch problems before they affect a session.
+
+```bash
+# Linux / Mac
+./validate.sh                              # checks global install
+./validate.sh --project /path/to/project   # checks a specific project
+
+# Windows
+.\validate.ps1                             # checks global install
+.\validate.ps1 -ProjectDir D:\repos\MyProject
+```
+
+**What it checks:**
+
+| Check | Pass | Fail |
+|---|---|---|
+| Agent count | 15 agents installed | Fewer than 15 — re-run install |
+| CLAUDE.md size | Under 4KB | Over 4KB — move detail to DESIGN.md |
+| Delta MD Extends: lines | Present | Missing — add global standard reference |
+| Unfilled placeholders | None found | `[YOUR_ORG]` etc. still in files |
+| Hooks wired | Both hooks in settings.json | Run wire-hooks script |
+
+Exits with code 1 on errors so it can be used in CI scripts.
+
+---
+
+## CI / GitHub Actions
+
+The framework ships a GitHub Actions workflow that runs on every PR and push to `development`. No setup needed beyond adding it to your repo.
+
+```
+.github/workflows/validate.yml
+```
+
+**What the CI job checks:**
+- `CLAUDE.md` is under 4KB — fails the build if over
+- `ORCHESTRATOR.md` and `DEPLOYMENT.md` have `Extends:` lines — warns if missing
+- No `[YOUR_ORG]` / `[your-value]` placeholders left unfilled — warns
+- No `.env` file committed — fails the build if found
+
+The job runs entirely with shell commands — no Anthropic API, no cost. It's deterministic. Failed checks appear inline on the PR with the exact file and line number.
+
+To add it to your project repo, copy `.github/workflows/validate.yml` into your project.
+
+---
+
+## Testing the Agents
+
+Agents are language model instructions — they can't be unit tested like code. Behavior verification requires running them against real inputs.
+
+`tests/README.md` contains:
+- A test matrix for all 15 agents (trigger phrase → expected behavior)
+- Sample inputs for the non-obvious ones (stack traces, SQL procs, Dockerfiles)
+- A logging table to record pass/fail per engineer
+
+**Recommended:** run the test matrix as a team exercise in your first two sessions. Two weeks of real usage surfaces anything broken faster than synthetic inputs. Log results in the table so the team knows what's been verified.
 
 ---
 
