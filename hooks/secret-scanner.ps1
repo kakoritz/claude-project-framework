@@ -27,7 +27,8 @@ if ($tsExts -contains $ext) {
     $tsScript = Join-Path $hooksDir "ts-context.py"
     if (Test-Path $tsScript) {
         try {
-            $tsResult = & python3 $tsScript $tmpFileExt 2>$null
+            $py = if (Get-Command python3 -ErrorAction SilentlyContinue) { "python3" } else { "python" }
+            $tsResult = & $py $tsScript $tmpFileExt 2>$null
             if ($tsResult) {
                 $tsJson = $tsResult | ConvertFrom-Json
                 if (-not $tsJson.fallback) {

@@ -70,7 +70,8 @@ if ($Type -eq "uipath-bot") {
             $outputFile = "$DestDir\ORCHESTRATOR.md"
             if (Test-Path $scanScript) {
                 Write-Host ""
-                python3 $scanScript --folders "$foldersInput" --project-name "$Name" --output "$outputFile"
+                $py = if (Get-Command python3 -ErrorAction SilentlyContinue) { "python3" } else { "python" }
+                & $py $scanScript --folders "$foldersInput" --project-name "$Name" --output "$outputFile"
             } else {
                 Write-Host "  SKIP: tools/scan-orchestrator.py not found — fill in ORCHESTRATOR.md manually."
             }

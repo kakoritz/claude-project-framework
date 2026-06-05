@@ -16,9 +16,12 @@ $AgentsDir = "$ClaudeDir\agents"
 $HooksDir  = "$ClaudeDir\hooks"
 $Arg       = if ($args.Count -gt 0) { $args[0] } else { $Mode }
 
+# ── Detect python command (python3 on Linux/Mac, python on Windows) ───────────
+$Python = if (Get-Command python3 -ErrorAction SilentlyContinue) { "python3" } else { "python" }
+
 # ── --add-markers shortcut ────────────────────────────────────────────────────
 if ($Arg -eq "--add-markers") {
-    python3 "$RepoDir\tools\claude-md.py" add-markers "$ClaudeDir\CLAUDE.md"
+    & $Python "$RepoDir\tools\claude-md.py" add-markers "$ClaudeDir\CLAUDE.md"
     exit 0
 }
 
@@ -31,7 +34,7 @@ if ($Arg -eq "--update") { $mode = "update" }
 # ── Read config.yaml ──────────────────────────────────────────────────────────
 function Read-Config([string]$Key, [string]$Default) {
     try {
-        $result = python3 -c "import yaml; d=yaml.safe_load(open('$RepoDir/config.yaml')); print(d$Key)" 2>$null
+        $result = & $Python -c "import yaml; d=yaml.safe_load(open('$RepoDir/config.yaml')); print(d$Key)" 2>$null
         if ($result) { return $result.Trim() } else { return $Default }
     } catch { return $Default }
 }
@@ -151,7 +154,7 @@ $claudeDest = "$ClaudeDir\CLAUDE.md"
 
 if ($mode -eq "update") {
     # Update mode: only touch framework-marked sections, ask before each change
-    python3 "$RepoDir\tools\claude-md.py" update-sections $claudeDest "$RepoDir\CLAUDE.md"
+    & $Python "$RepoDir\tools\claude-md.py" update-sections $claudeDest "$RepoDir\CLAUDE.md"
 
 } else {
     # Fresh install: R/M/S prompt

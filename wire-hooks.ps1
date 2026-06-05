@@ -1,5 +1,5 @@
 # wire-hooks.ps1 — Safely merge hook entries into %USERPROFILE%\.claude\settings.json
-# Run after install.ps1. Never replaces the full settings.json — only adds hooks.
+# Run after setup.ps1. Never replaces the full settings.json — only adds hooks.
 
 $ClaudeDir  = "$env:USERPROFILE\.claude"
 $Settings   = "$ClaudeDir\settings.json"
@@ -67,7 +67,8 @@ with open(r'$Settings', 'w') as f:
 print('  settings.json updated.')
 "@
 
-python3 -c $script
+$py = if (Get-Command python3 -ErrorAction SilentlyContinue) { "python3" } else { "python" }
+& $py -c $script
 
 Write-Host ""
 Write-Host "Done. Restart Claude Code to activate hooks."

@@ -21,10 +21,10 @@ Write-Host "[ Global Install ]"
 $AgentDir = "$env:USERPROFILE\.claude\agents"
 if (Test-Path $AgentDir) {
     $count = (Get-ChildItem "$AgentDir\*.md").Count
-    if ($count -ge 15) { Pass "$count agents installed" }
-    else               { Fail "Only $count agents installed — expected 15. Re-run install.ps1." }
+    if ($count -ge 17) { Pass "$count agents installed" }
+    else               { Fail "Only $count agents installed — expected 17. Re-run setup.ps1." }
 } else {
-    Fail "~\.claude\agents\ not found — run install.ps1 first"
+    Fail "~\.claude\agents\ not found — run setup.ps1 first"
 }
 
 $ClaudeMd = "$env:USERPROFILE\.claude\CLAUDE.md"
@@ -33,7 +33,7 @@ if (Test-Path $ClaudeMd) {
     if ($size -gt 4096) { Fail "CLAUDE.md is $size bytes — over 4KB limit" }
     else                { Pass "CLAUDE.md is $size bytes" }
 } else {
-    Warn "CLAUDE.md not found — run install.ps1"
+    Warn "CLAUDE.md not found — run setup.ps1"
 }
 
 $Settings = "$env:USERPROFILE\.claude\settings.json"
