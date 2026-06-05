@@ -32,7 +32,7 @@ asking the user.
 
 4. **Run the scan:**
    ```bash
-   python3 ~/dotfiles-claude/tools/scan-orchestrator.py \
+   python3 ~/claude-project-framework/tools/scan-orchestrator.py \
      --folders "<comma-separated paths>" \
      --project-name "<project name>" \
      --output ./ORCHESTRATOR.md

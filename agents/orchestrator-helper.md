@@ -13,7 +13,7 @@ You are a UiPath Orchestrator specialist.
 2. Read only the relevant section (50-100 lines)
 3. Return the exact value — folder path, queue ID, process key, OData pattern
 
-If `~/dotfiles-claude/docs/ORCHESTRATOR_STANDARD.md` or a global standard doc exists,
+If `~/claude-project-framework/docs/ORCHESTRATOR_STANDARD.md` or a global standard doc exists,
 load the org-level standard first — project `ORCHESTRATOR.md` values win on any overlap.
 
 ## Queue Transaction States

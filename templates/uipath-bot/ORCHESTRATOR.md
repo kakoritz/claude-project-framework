@@ -1,6 +1,6 @@
 # Orchestrator Reference — {{PROJECT_NAME}}
 
-Extends: ~/dotfiles-claude/docs/ORCHESTRATOR_STANDARD.md
+Extends: ~/claude-project-framework/docs/ORCHESTRATOR_STANDARD.md
 
 For connection settings, OData patterns, folder hierarchy, and uip CLI — see the standard.
 
@@ -14,7 +14,7 @@ For connection settings, OData patterns, folder hierarchy, and uip CLI — see t
 | Test | `Test/[Department]/{{PROJECT_NAME}}` | [ID] |
 | Dev  | `Development/[Department]/{{PROJECT_NAME}}` | [ID] |
 
-_Run `python3 ~/dotfiles-claude/tools/scan-orchestrator.py --folders "Prod/path,Test/path,Dev/path" --output ./ORCHESTRATOR.md` to auto-populate all IDs below._
+_Run `python3 ~/claude-project-framework/tools/scan-orchestrator.py --folders "Prod/path,Test/path,Dev/path" --output ./ORCHESTRATOR.md` to auto-populate all IDs below._
 
 ---
 

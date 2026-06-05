@@ -1,6 +1,6 @@
 #!/bin/bash
 # setup.sh — Install or update DCLI Claude global config
-# Run from: ~/dotfiles-claude/
+# Run from: ~/claude-project-framework/
 #
 # Usage:
 #   ./setup.sh               auto-detect (update if agents exist, fresh otherwise)

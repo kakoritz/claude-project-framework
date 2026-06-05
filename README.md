@@ -28,7 +28,7 @@ flowchart TD
         end
     end
 
-    subgraph STANDARDS["Org Standards — dotfiles-claude/docs/"]
+    subgraph STANDARDS["Org Standards — claude-project-framework/docs/"]
         OS["ORCHESTRATOR_STANDARD.md\nConnection · Folder hierarchy\nOData patterns · uip CLI"]
         DS["DEPLOYMENT_STANDARD.md\nECS Fargate · GitHub Actions\nAWS resource naming"]
     end

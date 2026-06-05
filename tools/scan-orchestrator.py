@@ -142,10 +142,10 @@ def generate_delta(project_name: str, folders: list) -> str:
     lines = [
         f"# Orchestrator Reference — {project_name}",
         "",
-        "Extends: ~/dotfiles-claude/docs/ORCHESTRATOR_STANDARD.md",
+        "Extends: ~/claude-project-framework/docs/ORCHESTRATOR_STANDARD.md",
         "",
         "For connection settings, OData patterns, folder hierarchy, and uip CLI — see the standard.",
-        f"_Generated: {ts} — re-run `python3 ~/dotfiles-claude/tools/scan-orchestrator.py` to refresh._",
+        f"_Generated: {ts} — re-run `python3 ~/claude-project-framework/tools/scan-orchestrator.py` to refresh._",
         "",
         "---",
         "",

@@ -1,6 +1,6 @@
 # new-project.ps1 — Scaffold a new DCLI project with Claude MD templates
 # Usage: .\new-project.ps1 [-Name <name>] [-Path <dest>]
-# Run from: %USERPROFILE%\dotfiles-claude\
+# Run from: %USERPROFILE%\claude-project-framework\
 
 param(
     [string]$Name,

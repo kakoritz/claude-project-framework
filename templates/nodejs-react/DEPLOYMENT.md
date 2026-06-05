@@ -1,6 +1,6 @@
 # Deployment — {{PROJECT_NAME}}
 
-Extends: ~/dotfiles-claude/docs/DEPLOYMENT_STANDARD.md
+Extends: ~/claude-project-framework/docs/DEPLOYMENT_STANDARD.md
 
 For full ECS Fargate runbook, GitHub Actions setup, and AWS patterns — see the standard.
 

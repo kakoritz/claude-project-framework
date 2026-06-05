@@ -1,6 +1,6 @@
 # Orchestrator Reference — {{PROJECT_NAME}}
 
-Extends: ~/dotfiles-claude/docs/ORCHESTRATOR_STANDARD.md
+Extends: ~/claude-project-framework/docs/ORCHESTRATOR_STANDARD.md
 
 For connection settings, OData patterns, folder hierarchy, and uip CLI — see the standard.
 Delete this file if the project does not interact with UiPath Orchestrator.

@@ -20,8 +20,8 @@ For ANY question about Orchestrator, deployments, or infrastructure — always l
 the global standard first, then the project delta. Do not wait to see an `Extends:` line.
 
 **Default load order:**
-1. For Orchestrator questions → load `~/dotfiles-claude/docs/ORCHESTRATOR_STANDARD.md` first
-2. For deployment questions → load `~/dotfiles-claude/docs/DEPLOYMENT_STANDARD.md` first
+1. For Orchestrator questions → load `~/claude-project-framework/docs/ORCHESTRATOR_STANDARD.md` first
+2. For deployment questions → load `~/claude-project-framework/docs/DEPLOYMENT_STANDARD.md` first
 3. Then load the project file (ORCHESTRATOR.md / DEPLOYMENT.md) if it exists
 4. Project values override global values on any overlap
 5. Note which layer each piece of information came from
@@ -30,8 +30,8 @@ If a project doc has `Extends:` — that confirms the two-layer intent. If it do
 load the global standard anyway. The global standard is always relevant.
 
 **Global standard files:**
-- `~/dotfiles-claude/docs/ORCHESTRATOR_STANDARD.md` — Orchestrator connection, folder hierarchy, OData patterns, uip CLI
-- `~/dotfiles-claude/docs/DEPLOYMENT_STANDARD.md` — ECS Fargate pipeline, GitHub Actions, AWS resource naming
+- `~/claude-project-framework/docs/ORCHESTRATOR_STANDARD.md` — Orchestrator connection, folder hierarchy, OData patterns, uip CLI
+- `~/claude-project-framework/docs/DEPLOYMENT_STANDARD.md` — ECS Fargate pipeline, GitHub Actions, AWS resource naming
 
 ## What to Report
 

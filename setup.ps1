@@ -1,5 +1,5 @@
 # setup.ps1 — Install or update DCLI Claude global config
-# Run from: %USERPROFILE%\dotfiles-claude\  (or wherever the repo lives)
+# Run from: %USERPROFILE%\claude-project-framework\  (or wherever the repo lives)
 # No admin required. Run as your normal user account.
 #
 # Usage:

@@ -1,7 +1,7 @@
 #!/bin/bash
 # new-project.sh — Scaffold a new DCLI project with Claude MD templates
 # Usage: ./new-project.sh [name] [dest-path]
-# Run from: ~/dotfiles-claude/
+# Run from: ~/claude-project-framework/
 
 set -e
 
