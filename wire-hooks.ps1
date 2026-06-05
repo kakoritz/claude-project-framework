@@ -1,10 +1,10 @@
-# wire-hooks.ps1 — Safely merge hook entries into %USERPROFILE%\.claude\settings.json
-# Run after setup.ps1. Never replaces the full settings.json — only adds hooks.
+# wire-hooks.ps1 -- Safely merge hook entries into %USERPROFILE%\.claude\settings.json
+# Run after setup.ps1. Never replaces the full settings.json -- only adds hooks.
 
-$ClaudeDir  = "$env:USERPROFILE\.claude"
-$Settings   = "$ClaudeDir\settings.json"
-$HooksDir   = "$ClaudeDir\hooks"
-$Ts         = Get-Date -Format "yyyyMMdd-HHmmss"
+$ClaudeDir = "$env:USERPROFILE\.claude"
+$Settings  = "$ClaudeDir\settings.json"
+$HooksDir  = "$ClaudeDir\hooks"
+$Ts        = Get-Date -Format "yyyyMMdd-HHmmss"
 
 Write-Host ""
 Write-Host "Wire Hooks into settings.json"
@@ -21,54 +21,63 @@ $Backup = "$Settings.bak.$Ts"
 Copy-Item $Settings $Backup
 Write-Host "  Backup: $Backup"
 
-# Use Python to safely merge (available on all dev machines)
-$script = @"
-import json, sys
+# Load JSON natively -- no Python required
+$raw      = Get-Content $Settings -Raw -Encoding UTF8
+$json     = $raw | ConvertFrom-Json
 
-with open(r'$Settings', 'r') as f:
-    settings = json.load(f)
-
-if 'hooks' not in settings:
-    settings['hooks'] = {}
-
-pre = settings['hooks'].get('PreToolUse', [])
-secret_hook = {
-    'matcher': 'Write',
-    'hooks': [{'type': 'command', 'command': 'powershell -File $HooksDir\\\\secret-scanner.ps1'}]
+# Ensure hooks structure exists
+if (-not $json.PSObject.Properties['hooks']) {
+    $json | Add-Member -MemberType NoteProperty -Name 'hooks' -Value ([PSCustomObject]@{})
 }
-if not any(h.get('matcher') == 'Write' and
-           any('secret-scanner' in str(x) for x in h.get('hooks', []))
-           for h in pre):
-    pre.append(secret_hook)
-    print('  Added: secret-scanner (PreToolUse:Write)')
-else:
-    print('  Already present: secret-scanner')
-
-settings['hooks']['PreToolUse'] = pre
-
-post = settings['hooks'].get('PostToolUse', [])
-guard_hook = {
-    'matcher': 'Write',
-    'hooks': [{'type': 'command', 'command': 'powershell -File $HooksDir\\\\claude-md-guard.ps1'}]
+if (-not $json.hooks.PSObject.Properties['PreToolUse']) {
+    $json.hooks | Add-Member -MemberType NoteProperty -Name 'PreToolUse' -Value @()
 }
-if not any(h.get('matcher') == 'Write' and
-           any('claude-md-guard' in str(x) for x in h.get('hooks', []))
-           for h in post):
-    post.append(guard_hook)
-    print('  Added: claude-md-guard (PostToolUse:Write)')
-else:
-    print('  Already present: claude-md-guard')
+if (-not $json.hooks.PSObject.Properties['PostToolUse']) {
+    $json.hooks | Add-Member -MemberType NoteProperty -Name 'PostToolUse' -Value @()
+}
 
-settings['hooks']['PostToolUse'] = post
+# Helper: check if a hook matcher+keyword already exists
+function Test-HookExists($list, $matcher, $keyword) {
+    foreach ($entry in $list) {
+        if ($entry.matcher -eq $matcher) {
+            foreach ($h in $entry.hooks) {
+                if ($h.command -like "*$keyword*") { return $true }
+            }
+        }
+    }
+    return $false
+}
 
-with open(r'$Settings', 'w') as f:
-    json.dump(settings, f, indent=2)
+# Helper: add a hook entry to a list (array)
+function Add-Hook($list, $matcher, $command) {
+    $entry = [PSCustomObject]@{
+        matcher = $matcher
+        hooks   = @([PSCustomObject]@{ type = "command"; command = $command })
+    }
+    return @($list) + @($entry)
+}
 
-print('  settings.json updated.')
-"@
+# secret-scanner -- PreToolUse:Write
+$secretCmd = "powershell -File `"$HooksDir\secret-scanner.ps1`""
+if (-not (Test-HookExists $json.hooks.PreToolUse 'Write' 'secret-scanner')) {
+    $json.hooks.PreToolUse = Add-Hook $json.hooks.PreToolUse 'Write' $secretCmd
+    Write-Host "  Added:          secret-scanner (PreToolUse:Write)"
+} else {
+    Write-Host "  Already present: secret-scanner"
+}
 
-$py = if (Get-Command python3 -ErrorAction SilentlyContinue) { "python3" } else { "python" }
-& $py -c $script
+# claude-md-guard -- PostToolUse:Write
+$guardCmd = "powershell -File `"$HooksDir\claude-md-guard.ps1`""
+if (-not (Test-HookExists $json.hooks.PostToolUse 'Write' 'claude-md-guard')) {
+    $json.hooks.PostToolUse = Add-Hook $json.hooks.PostToolUse 'Write' $guardCmd
+    Write-Host "  Added:          claude-md-guard (PostToolUse:Write)"
+} else {
+    Write-Host "  Already present: claude-md-guard"
+}
+
+# Write back
+$json | ConvertTo-Json -Depth 10 | Set-Content $Settings -Encoding UTF8
+Write-Host "  settings.json updated."
 
 Write-Host ""
 Write-Host "Done. Restart Claude Code to activate hooks."

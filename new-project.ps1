@@ -1,4 +1,4 @@
-# new-project.ps1 — Scaffold a new DCLI project with Claude MD templates
+# new-project.ps1 -- Scaffold a new DCLI project with Claude MD templates
 # Usage: .\new-project.ps1 [-Name <name>] [-Path <dest>]
 # Run from: %USERPROFILE%\claude-project-framework\
 
@@ -73,10 +73,10 @@ if ($Type -eq "uipath-bot") {
                 $py = if (Get-Command python3 -ErrorAction SilentlyContinue) { "python3" } else { "python" }
                 & $py $scanScript --folders "$foldersInput" --project-name "$Name" --output "$outputFile"
             } else {
-                Write-Host "  SKIP: tools/scan-orchestrator.py not found — fill in ORCHESTRATOR.md manually."
+                Write-Host "  SKIP: tools/scan-orchestrator.py not found -- fill in ORCHESTRATOR.md manually."
             }
         } else {
-            Write-Host "  No folders entered — fill in ORCHESTRATOR.md manually."
+            Write-Host "  No folders entered -- fill in ORCHESTRATOR.md manually."
         }
     } else {
         Write-Host "  Skipped. Run tools/scan-orchestrator.py later to populate ORCHESTRATOR.md."
@@ -88,7 +88,7 @@ Write-Host "Done. Open $DestDir in Claude Code to get started."
 Write-Host ""
 Write-Host "Next: fill in the [placeholder] values in each MD file."
 if ($Type -eq "uipath-bot") {
-    Write-Host "      Check ORCHESTRATOR.md — run tools/scan-orchestrator.py if not yet populated."
+    Write-Host "      Check ORCHESTRATOR.md -- run tools/scan-orchestrator.py if not yet populated."
 }
 if ($Type -in @("csharp-api","nodejs-react")) {
     Write-Host "      DEPLOYMENT.md needs your APP_NAME and AWS resource names."

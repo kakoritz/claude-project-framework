@@ -1,4 +1,4 @@
-# PreToolUse:Write hook — blocks writes containing secret patterns
+# PreToolUse:Write hook -- blocks writes containing secret patterns
 # Zero token cost. Runs before Claude writes any file.
 # Uses tree-sitter context when available to avoid flagging comments and test strings.
 

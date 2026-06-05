@@ -1,4 +1,4 @@
-# setup.ps1 — Install or update DCLI Claude global config
+# setup.ps1 -- Install or update DCLI Claude global config
 # Run from: %USERPROFILE%\claude-project-framework\  (or wherever the repo lives)
 # No admin required. Run as your normal user account.
 #
@@ -48,9 +48,9 @@ $InstVer  = if (Test-Path "$ClaudeDir\.framework-version") {
 
 Write-Host ""
 if ($mode -eq "update") {
-    Write-Host "Claude Framework — Update  (installed: $($InstVer.Trim()) -> repo: $RepoVer)"
+    Write-Host "Claude Framework -- Update  (installed: $($InstVer.Trim()) -> repo: $RepoVer)"
 } else {
-    Write-Host "Claude Framework — Fresh Install  (repo: $RepoVer)"
+    Write-Host "Claude Framework -- Fresh Install  (repo: $RepoVer)"
 }
 Write-Host "================================================"
 
