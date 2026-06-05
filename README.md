@@ -171,14 +171,14 @@ cd $env:USERPROFILE\claude-project-framework
 
 ### Step 3 — Run the Install Script
 
-Deploys all 15 agents, CLAUDE.md, RTK.md, and hook files to `~/.claude/`.
+Deploys all 17 agents, CLAUDE.md, RTK.md, and hook files to `~/.claude/`.
 
 ```bash
 # Linux / Mac
-chmod +x install.sh && ./install.sh
+chmod +x setup.sh && ./setup.sh
 
 # Windows
-.\install.ps1
+.\setup.ps1
 ```
 
 If you already have a `CLAUDE.md`, it will prompt you: **Replace / Merge / Skip**. Choose Merge if you have personal content you want to keep — it generates a Claude Code prompt to do the merge intelligently.
@@ -365,13 +365,13 @@ git clone https://github.com/kakoritz/claude-project-framework.git ~/claude-proj
 cd ~/claude-project-framework
 
 # Linux / Mac
-chmod +x install.sh && ./install.sh
+chmod +x setup.sh && ./setup.sh
 
 # Windows (PowerShell — no admin needed)
-.\install.ps1
+.\setup.ps1
 ```
 
-Open any project in Claude Code. The 15 agents are live immediately.
+Open any project in Claude Code. The 17 agents are live immediately.
 
 ---
 
@@ -552,7 +552,7 @@ Run `rtk discover` after a few sessions. It reads your actual Claude Code histor
 
 ### RTK Is Windows-Only in This Framework
 
-RTK is included in `windows/RTK.md` and deployed by `install.ps1`. It requires a separate binary install — see `windows/RTK.md` for verification steps.
+RTK is included in `windows/RTK.md` and deployed by `setup.ps1`. It requires a separate binary install — see `windows/RTK.md` for verification steps.
 
 > ⚠️ **Name collision:** If `rtk gain` fails after install, you may have a different `rtk` binary (`reachingforthejack/rtk`, the Rust Type Kit) on your PATH. `which rtk` will show which one you have.
 
@@ -575,24 +575,24 @@ RTK requires a manual entry in `settings.json` — add it to your `PreToolUse` h
 
 ---
 
-## install.ps1 / install.sh — What They Do
+## setup.ps1 / setup.sh — What They Do
 
-Safe to run on any existing machine. The scripts never overwrite machine-specific config.
+Auto-detects whether this is a fresh install or an update based on whether agents already exist in `~/.claude/agents/`. Override with `--fresh` or `--update`.
 
 | File | Behavior |
 |---|---|
-| `~/.claude/agents/*.md` | Always deployed / updated — creates folder if missing |
-| `~/.claude/CLAUDE.md` (no existing file) | Copied directly |
-| `~/.claude/CLAUDE.md` (already has framework content) | Silently skipped |
-| `~/.claude/CLAUDE.md` (exists, different content, under 4KB) | Prompt: Replace / Merge / Skip |
-| `~/.claude/CLAUDE.md` (exists, over 4KB) | Same prompt + size warning |
-| Replace | Timestamps backup, copies framework version |
-| Merge | Timestamps backup, prints ready-to-paste Claude Code prompt to merge intelligently |
+| `~/.claude/agents/*.md` | Deployed fresh / diffed and updated — new agents added, changed agents updated, unchanged skipped |
+| `~/.claude/hooks/*` | Same diff logic — only changed hooks are overwritten |
+| `global/*.md` | Deployed to `~/.claude/` — org-private knowledge files (e.g. `uipath-dcli-framework.md`) |
+| `~/.claude/CLAUDE.md` (fresh install, no file) | Copied directly |
+| `~/.claude/CLAUDE.md` (fresh install, exists) | Prompt: Replace / Merge / Skip |
+| `~/.claude/CLAUDE.md` (update mode, has markers) | Per-section unified diff — Y/n prompt for each changed section |
+| `~/.claude/CLAUDE.md` (update mode, no markers) | Skipped with hint to run `--add-markers` first |
 | `settings.json` | **Never touched** |
 | `settings.local.json` | **Never touched** |
 | `plugins/` | **Never touched** |
 
-The **Merge** option generates a prompt you paste into Claude Code. Claude reads both files, keeps your personal context, adds the DCLI global standards where missing, and keeps the result under 4KB.
+Run `setup.sh --add-markers` once on an existing `CLAUDE.md` to add `<!-- BEGIN/END:framework-* -->` markers around framework sections — enables surgical per-section updates without touching your personal content.
 
 ---
 
@@ -633,14 +633,14 @@ Claude writes a CLAUDE.md that grew to 6.2KB during a session
 
 ### Wiring Hooks Into settings.json
 
-`install.sh` / `install.ps1` deploy the hook **files** but do not touch `settings.json`.
+`setup.sh` / `setup.ps1` deploy the hook **files** but do not touch `settings.json`.
 Run the dedicated wiring script to safely merge the hooks in:
 
 ```bash
-# Linux / Mac — after install.sh
+# Linux / Mac — after setup.sh
 ./wire-hooks.sh
 
-# Windows — after install.ps1
+# Windows — after setup.ps1
 .\wire-hooks.ps1
 ```
 
@@ -712,7 +712,7 @@ claude-project-framework/
   STANDARDS_UIPATH.md          ← UiPath coding standards (copy to project as STANDARDS.md)
   SETUP.md                     ← CLI prerequisites and MCP server setup
   validate.sh / validate.ps1   ← Check framework setup and project doc health
-  install.sh / install.ps1     ← Deploy agents, hooks, CLAUDE.md
+  setup.sh / setup.ps1     ← Deploy agents, hooks, CLAUDE.md
   wire-hooks.sh / wire-hooks.ps1 ← Wire hooks + RTK into settings.json
   new-project.sh / new-project.ps1 ← Interactive project scaffold
 ```
@@ -734,7 +734,7 @@ claude-project-framework/
 
 ## Keeping Models Up to Date
 
-All 15 agents reference model names from a single file: `config.yaml`.
+All 17 agents reference model names from a single file: `config.yaml`.
 
 ```yaml
 models:
@@ -743,7 +743,7 @@ models:
   opus:   claude-opus-4-8
 ```
 
-When Anthropic releases new models, update `config.yaml` and re-run `install.sh` / `install.ps1`. The install script substitutes the new names into every agent file on copy — you never edit agent files directly for model updates.
+When Anthropic releases new models, update `config.yaml` and re-run `setup.sh` / `setup.ps1`. The install script substitutes the new names into every agent file on copy — you never edit agent files directly for model updates.
 
 ---
 
@@ -765,7 +765,7 @@ Run after install or after changing project docs to catch problems before they a
 
 | Check | Pass | Fail |
 |---|---|---|
-| Agent count | 15 agents installed | Fewer than 15 — re-run install |
+| Agent count | 17 agents installed | Fewer than 17 — re-run install |
 | CLAUDE.md size | Under 4KB | Over 4KB — move detail to DESIGN.md |
 | Delta MD Extends: lines | Present | Missing — add global standard reference |
 | Unfilled placeholders | None found | `[YOUR_ORG]` etc. still in files |
@@ -800,7 +800,7 @@ To add it to your project repo, copy `.github/workflows/validate.yml` into your 
 Agents are language model instructions — they can't be unit tested like code. Behavior verification requires running them against real inputs.
 
 `tests/README.md` contains:
-- A test matrix for all 15 agents (trigger phrase → expected behavior)
+- A test matrix for all 17 agents (trigger phrase → expected behavior)
 - Sample inputs for the non-obvious ones (stack traces, SQL procs, Dockerfiles)
 - A logging table to record pass/fail per engineer
 
