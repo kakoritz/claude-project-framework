@@ -16,22 +16,22 @@ $AgentsDir = "$ClaudeDir\agents"
 $HooksDir  = "$ClaudeDir\hooks"
 $Arg       = if ($args.Count -gt 0) { $args[0] } else { $Mode }
 
-# ── Detect python command (python3 on Linux/Mac, python on Windows) ───────────
+# -- Detect python command (python3 on Linux/Mac, python on Windows) -----------
 $Python = if (Get-Command python3 -ErrorAction SilentlyContinue) { "python3" } else { "python" }
 
-# ── --add-markers shortcut ────────────────────────────────────────────────────
+# -- --add-markers shortcut ----------------------------------------------------
 if ($Arg -eq "--add-markers") {
     & $Python "$RepoDir\tools\claude-md.py" add-markers "$ClaudeDir\CLAUDE.md"
     exit 0
 }
 
-# ── Auto-detect mode ──────────────────────────────────────────────────────────
+# -- Auto-detect mode ----------------------------------------------------------
 $agentFiles = Get-ChildItem "$AgentsDir\*.md" -ErrorAction SilentlyContinue
 $mode = if ($agentFiles.Count -gt 0) { "update" } else { "fresh" }
 if ($Arg -eq "--fresh")  { $mode = "fresh" }
 if ($Arg -eq "--update") { $mode = "update" }
 
-# ── Read config.yaml ──────────────────────────────────────────────────────────
+# -- Read config.yaml ----------------------------------------------------------
 function Read-Config([string]$Key, [string]$Default) {
     try {
         $result = & $Python -c "import yaml; d=yaml.safe_load(open('$RepoDir/config.yaml')); print(d$Key)" 2>$null
@@ -54,7 +54,7 @@ if ($mode -eq "update") {
 }
 Write-Host "================================================"
 
-# ── Python deps: tree-sitter for hooks ───────────────────────────────────────
+# -- Python deps: tree-sitter for hooks ---------------------------------------
 Write-Host ""
 try {
     pip install --user tree-sitter "tree-sitter-languages>=1.10" --quiet 2>$null
@@ -63,7 +63,7 @@ try {
     Write-Host "  WARN tree-sitter install failed -- hooks fall back to regex scanning"
 }
 
-# ── RTK (token optimizer) ────────────────────────────────────────────────────
+# -- RTK (token optimizer) ----------------------------------------------------
 $rtkSrc = "$RepoDir\windows\RTK.md"
 if (Test-Path $rtkSrc) {
     Copy-Item $rtkSrc "$ClaudeDir\RTK.md" -Force
@@ -92,7 +92,7 @@ if (Get-Command rtk -ErrorAction SilentlyContinue) {
     }
 }
 
-# ── Agents ────────────────────────────────────────────────────────────────────
+# -- Agents --------------------------------------------------------------------
 Write-Host ""
 New-Item -ItemType Directory -Force -Path $AgentsDir | Out-Null
 $ANew = 0; $AUpd = 0; $ASame = 0
@@ -123,7 +123,7 @@ Get-ChildItem "$RepoDir\agents\*.md" | ForEach-Object {
     }
 }
 
-# ── Hooks ─────────────────────────────────────────────────────────────────────
+# -- Hooks ---------------------------------------------------------------------
 New-Item -ItemType Directory -Force -Path $HooksDir | Out-Null
 $HNew = 0; $HUpd = 0
 
@@ -146,7 +146,7 @@ Get-ChildItem "$RepoDir\hooks\*" | Where-Object { -not $_.PSIsContainer } | ForE
     }
 }
 
-# ── Global docs (org-private knowledge files) ────────────────────────────────
+# -- Global docs (org-private knowledge files) --------------------------------
 $globalDir = "$RepoDir\global"
 if (Test-Path $globalDir) {
     $gNew = 0; $gUpd = 0
@@ -170,7 +170,7 @@ if (Test-Path $globalDir) {
     if ($gNew + $gUpd -gt 0) { Write-Host "" }
 }
 
-# ── CLAUDE.md ─────────────────────────────────────────────────────────────────
+# -- CLAUDE.md -----------------------------------------------------------------
 Write-Host ""
 $claudeDest = "$ClaudeDir\CLAUDE.md"
 
@@ -245,10 +245,10 @@ if ($mode -eq "update") {
     }
 }
 
-# ── Version sentinel ──────────────────────────────────────────────────────────
+# -- Version sentinel ----------------------------------------------------------
 Set-Content "$ClaudeDir\.framework-version" $RepoVer -Encoding UTF8
 
-# ── Summary ───────────────────────────────────────────────────────────────────
+# -- Summary -------------------------------------------------------------------
 Write-Host ""
 Write-Host "================================================"
 if ($mode -eq "update") {

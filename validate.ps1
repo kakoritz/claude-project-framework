@@ -14,7 +14,7 @@ Write-Host ""
 Write-Host "Claude Framework Validation"
 Write-Host "==========================="
 
-# ── Global install checks ─────────────────────────────────────────────────────
+# -- Global install checks -----------------------------------------------------
 Write-Host ""
 Write-Host "[ Global Install ]"
 
@@ -47,7 +47,7 @@ if (Test-Path $Settings) {
     Warn "settings.json not found -- hooks not active"
 }
 
-# ── Project doc checks ────────────────────────────────────────────────────────
+# -- Project doc checks --------------------------------------------------------
 Write-Host ""
 Write-Host "[ Project Docs: $ProjectDir ]"
 
@@ -69,22 +69,22 @@ foreach ($md in @("ORCHESTRATOR.md","DEPLOYMENT.md")) {
     }
 }
 
-# ── Unfilled placeholder check ────────────────────────────────────────────────
+# -- Unfilled placeholder check ------------------------------------------------
 Write-Host ""
 Write-Host "[ Unfilled Placeholders ]"
 
 $foundBrackets = $false
-Get-ChildItem "$ProjectDir\*.md" -ErrorAction SilentlyContinue | ForEach-Object {
-    $matches = Select-String -Path $_.FullName -Pattern "\[YOUR_[A-Z_]+\]|\[your-[a-z-]+\]"
-    if ($matches) {
+Get-ChildItem "$ProjectDir\*.md" -ErrorAction SilentlyContinue | Where-Object { $_.Name -ne "README.md" } | ForEach-Object {
+    $found = Select-String -Path $_.FullName -Pattern "\[YOUR_[A-Z_]+\]|\[your-[a-z-]+\]"
+    if ($found) {
         Warn "$($_.Name) has unfilled [placeholders]"
-        $matches | Select-Object -First 3 | ForEach-Object { Write-Host "         $_" }
-        $foundBrackets = $true
+        $found | Select-Object -First 3 | ForEach-Object { Write-Host "         $_" }
+        $script:foundBrackets = $true
     }
 }
 if (-not $foundBrackets) { Pass "No unfilled placeholders found" }
 
-# ── Summary ───────────────────────────────────────────────────────────────────
+# -- Summary -------------------------------------------------------------------
 Write-Host ""
 Write-Host "==========================="
 if ($Errors -eq 0 -and $Warnings -eq 0) {

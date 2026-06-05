@@ -13,7 +13,7 @@ if ($file -match "\.env\.example|\.env\.sample|\.env\.template|\.test\.|\.spec\.
 # Allow if content has # noscan directive
 if ($content -match "# noscan") { exit 0 }
 
-# ── Determine what to scan ────────────────────────────────────────────────────
+# -- Determine what to scan ----------------------------------------------------
 $hooksDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $ext = [System.IO.Path]::GetExtension($file).TrimStart('.')
 $checkContent = $content
@@ -42,7 +42,7 @@ if ($tsExts -contains $ext) {
     Remove-Item $tmpFile -ErrorAction SilentlyContinue
 }
 
-# ── Scan for secret patterns ──────────────────────────────────────────────────
+# -- Scan for secret patterns --------------------------------------------------
 $patterns = @(
     'AKIA[0-9A-Z]{16}',
     'sk-ant-[a-zA-Z0-9\-]+',

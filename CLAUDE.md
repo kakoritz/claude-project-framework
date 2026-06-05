@@ -63,27 +63,7 @@ Stay in main context when:
 
 ### Global Agents (Available in Every Project)
 
-Defined in `~/.claude/agents/`. These run on every project automatically.
-
-| Agent | Model | Trigger |
-|---|---|---|
-| `log-analyzer` | Haiku | User shares error logs, crash output, stack traces |
-| `doc-lookup` | Haiku | User asks what a project doc says, or finds something in DESIGN/DEPLOYMENT/ORCHESTRATOR |
-| `pr-reviewer` | Haiku | User asks to review changes, check a diff, or review before committing |
-| `orchestrator-helper` | Haiku | User asks about Orchestrator folder paths, queue IDs, process keys, OData patterns, uip CLI |
-| `uipath-helper` | Haiku | User asks about UiPath XAML patterns, REFramework design, or wants pre-code-review checklist |
-| `code-indexer` | Haiku | User asks about code structure, wants to know what classes/methods a file contains |
-| `orch-scanner` | Haiku | User wants to scan/refresh Orchestrator resources and populate ORCHESTRATOR.md |
-| `standards-checker` | Haiku | User asks to check code against standards, validate best practices, or review before commit |
-| `security-check` | Haiku | User asks for security check, vulnerability scan, injection risks, data exposure review |
-| `release-notes` | Haiku | User asks to update release notes, generate a changelog entry, or create a release summary |
-| `test-advisor` | Sonnet | User asks to write unit tests, generate tests for new code, or audit test coverage |
-| `dependency-audit` | Haiku | User asks if packages are up to date, wants vulnerability check, asks what's outdated |
-| `env-checker` | Haiku | User asks if ready to deploy, wants .env validated, checks for committed secrets |
-| `db-advisor` | Haiku | User shares SQL, asks about stored proc performance, schema review, index suggestions |
-| `jira-helper` | Haiku | User asks to write a Jira ticket, format commit message, write acceptance criteria |
-| `docker-advisor` | Haiku | User shares Dockerfile, asks about container optimization, layer caching, ECS patterns |
-| `azure-helper` | Haiku | User asks about Azure AD / MSAL setup, app registrations, AADSTS errors, auth flows |
+17 agents defined in `~/.claude/agents/`. Full inventory and trigger descriptions in `AGENTS.md`.
 
 ### Project Agents (Per-Project)
 
