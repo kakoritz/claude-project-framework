@@ -56,6 +56,18 @@ else
     echo "  SKIP tree-sitter (pip3 not found — hooks will use regex scanning)"
 fi
 
+# ── RTK (token optimizer) ────────────────────────────────────────────────────
+if command -v rtk >/dev/null 2>&1; then
+    echo "  OK  rtk $(rtk --version 2>/dev/null)"
+elif command -v cargo >/dev/null 2>&1; then
+    echo "  Installing rtk via cargo..."
+    cargo install rtk --quiet 2>/dev/null \
+        && echo "  OK  rtk installed" \
+        || echo "  WARN rtk install failed -- install manually: cargo install rtk"
+else
+    echo "  WARN rtk not found and cargo not available -- install rtk manually for token savings"
+fi
+
 # ── Agents ────────────────────────────────────────────────────────────────────
 echo ""
 mkdir -p "$AGENTS_DIR"

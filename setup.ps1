@@ -63,11 +63,33 @@ try {
     Write-Host "  WARN tree-sitter install failed -- hooks fall back to regex scanning"
 }
 
-# ── RTK (Windows-only token optimizer) ───────────────────────────────────────
+# ── RTK (token optimizer) ────────────────────────────────────────────────────
 $rtkSrc = "$RepoDir\windows\RTK.md"
 if (Test-Path $rtkSrc) {
     Copy-Item $rtkSrc "$ClaudeDir\RTK.md" -Force
-    Write-Host "  OK  RTK.md"
+}
+
+if (Get-Command rtk -ErrorAction SilentlyContinue) {
+    Write-Host "  OK  rtk $(rtk --version 2>$null)"
+} else {
+    Write-Host "  Installing rtk..."
+    $installed = $false
+
+    if (Get-Command winget -ErrorAction SilentlyContinue) {
+        winget install rtk --silent 2>$null
+        if (Get-Command rtk -ErrorAction SilentlyContinue) { $installed = $true }
+    }
+
+    if (-not $installed -and (Get-Command cargo -ErrorAction SilentlyContinue)) {
+        cargo install rtk --quiet 2>$null
+        if (Get-Command rtk -ErrorAction SilentlyContinue) { $installed = $true }
+    }
+
+    if ($installed) {
+        Write-Host "  OK  rtk installed"
+    } else {
+        Write-Host "  WARN rtk install failed -- install manually: winget install rtk  OR  cargo install rtk"
+    }
 }
 
 # ── Agents ────────────────────────────────────────────────────────────────────
