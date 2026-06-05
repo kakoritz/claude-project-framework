@@ -22,8 +22,8 @@ flowchart TD
 
     subgraph GLOBAL["Global Layer — ~/.claude/"]
         GCM["CLAUDE.md\nRules · Agent roster · Org infra\nLoaded on every message"]
-        subgraph AGENTS["15 Auto-routing Agents"]
-            HA["Haiku × 14\nlog-analyzer · doc-lookup · pr-reviewer\nstandards-checker · security-check\nuipath-helper · uipath-reviewer\ndependency-audit · env-checker\ndb-advisor · jira-helper\ndocker-advisor · azure-helper\nrelease-notes"]
+        subgraph AGENTS["17 Auto-routing Agents"]
+            HA["Haiku × 16\nlog-analyzer · doc-lookup · pr-reviewer\norchestrator-helper · uipath-helper\ncode-indexer · orch-scanner\nstandards-checker · security-check\ndependency-audit · env-checker\ndb-advisor · jira-helper\ndocker-advisor · azure-helper\nrelease-notes"]
             SA["Sonnet × 1\ntest-advisor"]
         end
     end
@@ -231,7 +231,7 @@ Install only what applies to your work:
 npm install -g @uipath/uipath-cli
 uip auth login    # one-time — authenticates to your Orchestrator
 ```
-Required for `uipath-helper` to do live folder/queue/process lookups. Without it, the agent falls back to reading `ORCHESTRATOR.md` only.
+Required for `orchestrator-helper` to do live folder/queue/process lookups. Without it, the agent falls back to reading `ORCHESTRATOR.md` only.
 
 **.NET / C# developers:**
 ```bash
@@ -385,12 +385,14 @@ No slash commands. No extra configuration. Just ask naturally.
 | `log-analyzer` | Haiku | Share error logs, stack traces, crash output |
 | `doc-lookup` | Haiku | "What does DESIGN.md say about X" · "where is Y documented" |
 | `pr-reviewer` | Haiku | "Review this diff" · "check before I commit" · "any issues here" |
-| `uipath-helper` | Haiku | "What's the queue ID for..." · "which folder is TIR in" · OData patterns |
+| `orchestrator-helper` | Haiku | "What's the queue ID for..." · "which folder is TIR in" · OData patterns · uip CLI |
+| `uipath-helper` | Haiku | "REFramework question" · "prep for code review" · XAML design |
+| `code-indexer` | Haiku | "What classes are in this file" · "show me the structure of X" |
+| `orch-scanner` | Haiku | "Scan orchestrator" · "refresh ORCHESTRATOR.md" · "get live queue IDs" |
 | `standards-checker` | Haiku | "Does this meet standards" · "any naming violations" · "check before PR" |
 | `security-check` | Haiku | "Security review" · "any injection risks" · "check for exposed secrets" |
 | `release-notes` | Haiku | "Update release notes" · "generate changelog" · "what changed in v2.1" |
 | `test-advisor` | **Sonnet** | "Write tests for this" · "what's not covered" · "audit test coverage" |
-| `uipath-reviewer` | Haiku | "Prep for code review" · "run pre-review checklist" |
 | `dependency-audit` | Haiku | "Are my packages up to date" · "any vulnerable dependencies" |
 | `env-checker` | Haiku | "Ready to deploy" · "check my env vars" · "anything missing from .env" |
 | `db-advisor` | Haiku | Share SQL · "review this stored proc" · "index suggestions" |
@@ -476,7 +478,7 @@ What's left to fill in: your project description, queue IDs, folder paths, and a
 
 ## UiPath Coding Standards
 
-`STANDARDS_UIPATH.md` is a complete standards file for any UiPath project. Copy it to your project root as `STANDARDS.md` — the `standards-checker` and `uipath-reviewer` agents read it automatically.
+`STANDARDS_UIPATH.md` is a complete standards file for any UiPath project. Copy it to your project root as `STANDARDS.md` — the `standards-checker` and `uipath-helper` agents read it automatically.
 
 **Covers:**
 - Argument prefixes: `in_`, `out_`, `io_` — no bare names
@@ -672,7 +674,7 @@ See `SETUP.md` for full CLI install instructions. Short version:
 |---|---|---|
 | `git` | All agents | Built-in / git-scm.com |
 | `gh` | pr-reviewer, release-notes | `winget install GitHub.cli` |
-| `uip` | uipath-helper | `npm install -g @uipath/uipath-cli` |
+| `uip` | orchestrator-helper, orch-scanner | `npm install -g @uipath/uipath-cli` |
 | `aws` | docker-advisor, env-checker | `winget install Amazon.AWSCLI` |
 | `dotnet` | dependency-audit (C#) | dot.net/download |
 | `node/npm` | dependency-audit (JS) | nodejs.org |
@@ -809,10 +811,10 @@ Agents are language model instructions — they can't be unit tested like code. 
 ## Troubleshooting
 
 **Agent isn't triggering**
-Agents route by matching your message against their `description` field. If one isn't firing, try phrasing closer to the trigger examples in the agent table. Also confirm agents are installed: `ls ~/.claude/agents/` should show 15 files.
+Agents route by matching your message against their `description` field. If one isn't firing, try phrasing closer to the trigger examples in the agent table. Also confirm agents are installed: `ls ~/.claude/agents/` should show 17 files.
 
 **`uip` command not found**
-`uipath-helper` falls back to reading `ORCHESTRATOR.md` statically when `uip` isn't installed — it still works, just no live Orchestrator queries. Install: `npm install -g @uipath/uipath-cli` then `uip auth login`.
+`orchestrator-helper` falls back to reading `ORCHESTRATOR.md` statically when `uip` isn't installed — it still works, just no live Orchestrator queries. Install: `npm install -g @uipath/uipath-cli` then `uip auth login`.
 
 **`gh auth` expired**
 `pr-reviewer` and `release-notes` need a live GitHub session. Run `gh auth login` to re-authenticate. Agents fall back to reading local git history when gh auth fails.

@@ -61,10 +61,37 @@ for f in "$TEMPLATE_DIR"/*.md; do
 done
 
 echo ""
+
+# ── UiPath: offer Orchestrator scan ──────────────────────────────────────────
+if [ "$TYPE" = "uipath-bot" ]; then
+    echo "  Orchestrator scan — auto-populate queue IDs, bucket IDs, assets."
+    echo "  Requires UIPATH_CLIENT_ID and UIPATH_CLIENT_SECRET in .env or environment."
+    echo ""
+    read -p "  Scan Orchestrator now? (y/n): " scan_choice
+    if [ "${scan_choice,,}" = "y" ]; then
+        echo ""
+        echo "  Enter folder paths for each environment (comma-separated)."
+        echo "  Example: Production/Shared Services/TIR,Test/Shared Services/TIR,Development/Shared Services/TIR"
+        echo ""
+        read -p "  Folder paths: " orch_folders
+        if [ -n "$orch_folders" ]; then
+            python3 "$REPO_DIR/tools/scan-orchestrator.py" \
+                --folders "$orch_folders" \
+                --project-name "$NAME" \
+                --output "$DEST_DIR/ORCHESTRATOR.md"
+        else
+            echo "  No paths entered — ORCHESTRATOR.md left as template."
+        fi
+    else
+        echo "  Skipped. Edit $DEST_DIR/ORCHESTRATOR.md to fill in IDs manually."
+        echo "  Or run: python3 $REPO_DIR/tools/scan-orchestrator.py --folders \"<paths>\" --output $DEST_DIR/ORCHESTRATOR.md"
+    fi
+    echo ""
+fi
+
 echo "Done. Open $DEST_DIR in Claude Code to get started."
 echo ""
-echo "Next: fill in the [placeholder] values in each MD file."
-[ "$TYPE" = "uipath-bot"  ] && echo "      ORCHESTRATOR.md needs your queue IDs and folder paths."
-[ "$TYPE" = "csharp-api"  ] && echo "      DEPLOYMENT.md needs your APP_NAME and AWS resource names."
-[ "$TYPE" = "nodejs-react"] && echo "      DEPLOYMENT.md needs your APP_NAME and AWS resource names."
+[ "$TYPE" != "uipath-bot"  ] && echo "Next: fill in the [placeholder] values in each MD file."
+[ "$TYPE" = "csharp-api"   ] && echo "      DEPLOYMENT.md needs your APP_NAME and AWS resource names."
+[ "$TYPE" = "nodejs-react" ] && echo "      DEPLOYMENT.md needs your APP_NAME and AWS resource names."
 echo ""

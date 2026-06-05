@@ -57,12 +57,37 @@ Get-ChildItem "$TemplateDir\*.md" | ForEach-Object {
     Write-Host "  OK $($_.Name)"
 }
 
+if ($Type -eq "uipath-bot") {
+    Write-Host ""
+    Write-Host "Orchestrator Scan"
+    Write-Host "-----------------"
+    Write-Host "Scan Orchestrator now to populate ORCHESTRATOR.md with live resource IDs?"
+    $doScan = Read-Host "Run scan? (y/n)"
+    if ($doScan -eq "y") {
+        $foldersInput = Read-Host "Folder paths (comma-separated, e.g. Production/Dept/Bot,Test/Dept/Bot)"
+        if ($foldersInput) {
+            $scanScript = "$RepoDir\tools\scan-orchestrator.py"
+            $outputFile = "$DestDir\ORCHESTRATOR.md"
+            if (Test-Path $scanScript) {
+                Write-Host ""
+                python3 $scanScript --folders "$foldersInput" --project-name "$Name" --output "$outputFile"
+            } else {
+                Write-Host "  SKIP: tools/scan-orchestrator.py not found — fill in ORCHESTRATOR.md manually."
+            }
+        } else {
+            Write-Host "  No folders entered — fill in ORCHESTRATOR.md manually."
+        }
+    } else {
+        Write-Host "  Skipped. Run tools/scan-orchestrator.py later to populate ORCHESTRATOR.md."
+    }
+}
+
 Write-Host ""
 Write-Host "Done. Open $DestDir in Claude Code to get started."
 Write-Host ""
 Write-Host "Next: fill in the [placeholder] values in each MD file."
 if ($Type -eq "uipath-bot") {
-    Write-Host "      ORCHESTRATOR.md needs your queue IDs and folder paths."
+    Write-Host "      Check ORCHESTRATOR.md — run tools/scan-orchestrator.py if not yet populated."
 }
 if ($Type -in @("csharp-api","nodejs-react")) {
     Write-Host "      DEPLOYMENT.md needs your APP_NAME and AWS resource names."

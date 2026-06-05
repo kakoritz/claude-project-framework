@@ -6,28 +6,51 @@ For connection settings, OData patterns, folder hierarchy, and uip CLI — see t
 
 ---
 
-## This Project's Folders & Queues
+## Folder Paths
 
-| Item | Value |
-|---|---|
-| Production folder | `Production/[Department]/[Process Name]` |
-| Test folder | `Test/[Department]/[Process Name]` |
-| Queue name | `[QUEUE_NAME]` |
-| Queue def ID (prod) | [ID] |
-| Queue def ID (test) | [ID] |
-
----
-
-## Process Keys
-
-| Process | Folder | Key | Args |
-|---|---|---|---|
-| {{PROJECT_NAME}} | `Production/[folder]` | [KEY] | [args or —] |
-
----
-
-## Assets Used
-
-| Asset Name | Folder | Purpose |
+| Environment | Folder Path | Folder ID |
 |---|---|---|
-| [AssetName] | [FolderPath] | [What it holds] |
+| Prod | `Production/[Department]/{{PROJECT_NAME}}` | [ID] |
+| Test | `Test/[Department]/{{PROJECT_NAME}}` | [ID] |
+| Dev  | `Development/[Department]/{{PROJECT_NAME}}` | [ID] |
+
+_Run `python3 ~/dotfiles-claude/tools/scan-orchestrator.py --folders "Prod/path,Test/path,Dev/path" --output ./ORCHESTRATOR.md` to auto-populate all IDs below._
+
+---
+
+## Queues
+
+| Queue Name | ID | Environment |
+|---|---|---|
+| `[QUEUE_NAME]` | [ID] | Prod |
+| `[QUEUE_NAME]` | [ID] | Test |
+| `[QUEUE_NAME]` | [ID] | Dev |
+
+---
+
+## Storage Buckets
+
+| Bucket Name | ID | Provider | Environment |
+|---|---|---|---|
+| `[BUCKET_NAME]` | [ID] | Azure | Prod |
+
+---
+
+## Assets
+
+| Asset Name | ID | Type | Environment |
+|---|---|---|---|
+| `[ASSET_NAME]` | [ID] | Text | Prod |
+
+---
+
+## Processes
+
+| Process Name | Key | Environment |
+|---|---|---|
+| `{{PROJECT_NAME}}` | `[KEY]` | Prod |
+
+---
+
+## Notes
+
