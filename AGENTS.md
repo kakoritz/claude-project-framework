@@ -93,3 +93,40 @@ When adding a new file that needs to land in `~/.claude/`, place it in `global/`
 4. Commit and push
 
 Agents in `agents/` are copied to `~/.claude/agents/` by the setup scripts automatically — no wiring needed.
+
+---
+
+## Versioning — MAJOR.MINOR.PATCH
+
+Version lives in `config.yaml`. Bump it on every push that changes deployed behavior.
+
+| Bump | When | Update behavior |
+|---|---|---|
+| `PATCH` (x.x.1) | Agent/hook fixes, wording tweaks, new knowledge in `global/` | Silent auto-update — no prompting |
+| `MINOR` (x.1.0) | New agents, new framework CLAUDE.md sections, new tools | Per-section Y/n diff — engineer confirms each change |
+| `MAJOR` (1.0.0) | Breaking — renamed/removed sections, restructured CLAUDE.md, removed agents | Claude-assisted merge required — setup script prints a merge prompt |
+
+---
+
+## Update Philosophy
+
+This framework is **not an enforced workflow**. It is opt-in approved configuration.
+
+**The contract:**
+- Content inside `<!-- BEGIN:framework-* -->` markers in `CLAUDE.md` = org owns it. Updates overwrite it.
+- Content outside markers = engineer owns it. Never touched by setup scripts.
+
+**Three engineer profiles:**
+
+**1. Blind trust** — run `setup.sh --update`, take everything. Fast, always current, no surprises. Right for most engineers.
+
+**2. Savvy** — review the diff first (`git diff` between repo version and `~/.claude/`), use Claude to help decide what to keep. Right for engineers who've made local customizations they care about.
+
+**3. Contributor** — made changes locally that the team would benefit from. Share them back: open a PR or tell Adam. If it's good, it gets diffed, reviewed, and pushed as a new version for everyone.
+
+**The risk is explicit:** pulling a MINOR or MAJOR update without reviewing means you accept org defaults for the framework sections. That's the point — org standards stay canonical. Personal sections are always safe.
+
+**When AI is involved:**
+- PATCH/MINOR: mechanical — setup script handles it, no Claude needed
+- MAJOR: judgment call — Claude reads both files, proposes a merge, engineer approves
+- Contributor flow: Claude diffs the engineer's changes against main, flags what's novel vs. what diverges from org standards, maintainer decides what to pull in

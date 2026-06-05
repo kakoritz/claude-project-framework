@@ -1,7 +1,7 @@
 # Model configuration — single source of truth for all agents
 # Update here, re-run setup.sh / setup.ps1 to propagate to all 17 agents
 
-version: "1.4"
+version: "1.4.0"
 
 models:
   haiku:  claude-haiku-4-5-20251001
