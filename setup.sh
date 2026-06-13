@@ -139,6 +139,27 @@ if [ -d "$REPO_DIR/global" ]; then
     [ $((G_NEW + G_UPD)) -gt 0 ] && echo "" || true
 fi
 
+# ── Steering (security policy files) ──────────────────────────────────────────
+if [ -d "$REPO_DIR/steering" ]; then
+    mkdir -p "$CLAUDE_DIR/steering"
+    S_NEW=0; S_UPD=0
+    for policy in "$REPO_DIR/steering/"*; do
+        [ -f "$policy" ] || continue
+        name=$(basename "$policy")
+        dest="$CLAUDE_DIR/steering/$name"
+        if [ ! -f "$dest" ]; then
+            cp "$policy" "$dest"
+            echo "  +  steering/$name"
+            S_NEW=$((S_NEW + 1))
+        elif ! diff -q "$policy" "$dest" >/dev/null 2>&1; then
+            cp "$policy" "$dest"
+            echo "  ~  steering/$name"
+            S_UPD=$((S_UPD + 1))
+        fi
+    done
+    [ $((S_NEW + S_UPD)) -gt 0 ] && echo "" || true
+fi
+
 # ── CLAUDE.md ─────────────────────────────────────────────────────────────────
 echo ""
 CLAUDE_DEST="$CLAUDE_DIR/CLAUDE.md"
